@@ -2,7 +2,12 @@ import { useMemo, useState } from "react";
 import { parseBattleTime } from "./lib/battleTime";
 import { createCsv } from "./lib/csv";
 import { createRegionPreviews, type RegionPreview } from "./lib/imageRegions";
-import { recognizeResultText, type ResultOcrOutput } from "./lib/ocr";
+import {
+  recognizeResultText,
+  recognizeUserNames,
+  type ResultOcrOutput,
+  type UserNameOcrOutput,
+} from "./lib/ocr";
 import type { BattleRecord } from "./types/battle";
 
 function createEmptyRecord(fileName: string): BattleRecord {
@@ -35,7 +40,9 @@ export default function App() {
   const [previews, setPreviews] = useState<RegionPreview[]>([]);
   const [isProcessingPreview, setIsProcessingPreview] = useState(false);
   const [resultOcr, setResultOcr] = useState<ResultOcrOutput | null>(null);
+  const [userNameOcr, setUserNameOcr] = useState<UserNameOcrOutput | null>(null);
   const [isRecognizingResult, setIsRecognizingResult] = useState(false);
+  const [isRecognizingUserName, setIsRecognizingUserName] = useState(false);
 
   const csv = useMemo(() => {
     if (files.length === 0 || error) {
@@ -73,6 +80,7 @@ export default function App() {
                 setError(null);
                 setPreviews([]);
                 setResultOcr(null);
+                setUserNameOcr(null);
 
                 if (nextFiles[0]) {
                   setIsProcessingPreview(true);
@@ -82,6 +90,7 @@ export default function App() {
                 setFiles(nextFiles);
                 setPreviews([]);
                 setResultOcr(null);
+                setUserNameOcr(null);
                 setError(caught instanceof Error ? caught.message : "Invalid file.");
               } finally {
                 setIsProcessingPreview(false);
@@ -133,34 +142,68 @@ export default function App() {
           <section className="ocr-panel" aria-label="OCR デバッグ">
             <div className="panel-heading">
               <h2>OCR</h2>
-              <button
-                type="button"
-                disabled={isRecognizingResult}
-                onClick={async () => {
-                  const leftResult = previews.find((preview) => preview.name === "leftResult");
-                  const rightResult = previews.find((preview) => preview.name === "rightResult");
+              <div className="button-group">
+                <button
+                  type="button"
+                  disabled={isRecognizingResult}
+                  onClick={async () => {
+                    const leftResult = previews.find((preview) => preview.name === "leftResult");
+                    const rightResult = previews.find((preview) => preview.name === "rightResult");
 
-                  if (!leftResult || !rightResult) {
-                    setError("Win/Lose 領域が見つかりません。");
-                    return;
-                  }
+                    if (!leftResult || !rightResult) {
+                      setError("Win/Lose 領域が見つかりません。");
+                      return;
+                    }
 
-                  try {
-                    setError(null);
-                    setIsRecognizingResult(true);
-                    setResultOcr(
-                      await recognizeResultText(leftResult.dataUrl, rightResult.dataUrl),
+                    try {
+                      setError(null);
+                      setIsRecognizingResult(true);
+                      setResultOcr(
+                        await recognizeResultText(leftResult.dataUrl, rightResult.dataUrl),
+                      );
+                    } catch (caught) {
+                      setResultOcr(null);
+                      setError(caught instanceof Error ? caught.message : "OCR failed.");
+                    } finally {
+                      setIsRecognizingResult(false);
+                    }
+                  }}
+                >
+                  {isRecognizingResult ? "実行中" : "Win/Lose OCR"}
+                </button>
+                <button
+                  type="button"
+                  disabled={isRecognizingUserName}
+                  onClick={async () => {
+                    const leftUserName = previews.find(
+                      (preview) => preview.name === "leftUserName",
                     );
-                  } catch (caught) {
-                    setResultOcr(null);
-                    setError(caught instanceof Error ? caught.message : "OCR failed.");
-                  } finally {
-                    setIsRecognizingResult(false);
-                  }
-                }}
-              >
-                {isRecognizingResult ? "実行中" : "Win/Lose OCR"}
-              </button>
+                    const rightUserName = previews.find(
+                      (preview) => preview.name === "rightUserName",
+                    );
+
+                    if (!leftUserName || !rightUserName) {
+                      setError("ユーザー名領域が見つかりません。");
+                      return;
+                    }
+
+                    try {
+                      setError(null);
+                      setIsRecognizingUserName(true);
+                      setUserNameOcr(
+                        await recognizeUserNames(leftUserName.dataUrl, rightUserName.dataUrl),
+                      );
+                    } catch (caught) {
+                      setUserNameOcr(null);
+                      setError(caught instanceof Error ? caught.message : "OCR failed.");
+                    } finally {
+                      setIsRecognizingUserName(false);
+                    }
+                  }}
+                >
+                  {isRecognizingUserName ? "実行中" : "ユーザー名 OCR"}
+                </button>
+              </div>
             </div>
             {resultOcr && (
               <div className="ocr-result-grid">
@@ -173,6 +216,20 @@ export default function App() {
                   <span>rightResult</span>
                   <strong>{resultOcr.rightResult ?? "unknown"}</strong>
                   <code>{resultOcr.rightResultText || "(empty)"}</code>
+                </div>
+              </div>
+            )}
+            {userNameOcr && (
+              <div className="ocr-result-grid">
+                <div className="ocr-result-item">
+                  <span>leftUserName</span>
+                  <strong>{userNameOcr.leftUserName || "unknown"}</strong>
+                  <code>{userNameOcr.leftUserNameText || "(empty)"}</code>
+                </div>
+                <div className="ocr-result-item">
+                  <span>rightUserName</span>
+                  <strong>{userNameOcr.rightUserName || "unknown"}</strong>
+                  <code>{userNameOcr.rightUserNameText || "(empty)"}</code>
                 </div>
               </div>
             )}

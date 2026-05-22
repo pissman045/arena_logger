@@ -137,6 +137,7 @@ h1 {
 .panel-heading {
   align-items: center;
   display: flex;
+  gap: 12px;
   justify-content: space-between;
 }
 
@@ -162,6 +163,13 @@ h1 {
 .panel-heading button:disabled {
   background: #aeb7c2;
   cursor: not-allowed;
+}
+
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .ocr-result-grid {

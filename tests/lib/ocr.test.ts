@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { inferBattleResults, normalizeBattleResult } from "../../src/lib/ocr";
+import {
+  inferBattleResults,
+  normalizeBattleResult,
+  normalizeUserName,
+} from "../../src/lib/ocr";
 
 describe("normalizeBattleResult", () => {
   it("normalizes win-like OCR text", () => {
@@ -47,5 +51,15 @@ describe("inferBattleResults", () => {
       leftResult: null,
       rightResult: null,
     });
+  });
+});
+
+describe("normalizeUserName", () => {
+  it("removes whitespace", () => {
+    expect(normalizeUserName("  player   name  ")).toBe("playername");
+  });
+
+  it("removes symbols and punctuation", () => {
+    expect(normalizeUserName("【先生】!!")).toBe("先生");
   });
 });
