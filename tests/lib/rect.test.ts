@@ -11,4 +11,25 @@ describe("toPixelRect", () => {
       height: 170,
     });
   });
+
+  it("converts adjusted regions to sample image pixels", () => {
+    expect(toPixelRect(extractionRegions.leftChar6Name, sampleImageSize)).toEqual({
+      x: 1400,
+      y: 2090,
+      width: 235,
+      height: 135,
+    });
+    expect(toPixelRect(extractionRegions.leftChar6Damage, sampleImageSize)).toEqual({
+      x: 1400,
+      y: 1170,
+      width: 235,
+      height: 770,
+    });
+    expect(toPixelRect(extractionRegions.rightResult, sampleImageSize)).toEqual({
+      x: 2270,
+      y: 900,
+      width: 390,
+      height: 190,
+    });
+  });
 });

@@ -46,7 +46,7 @@ type RelativeRect = {
 ### leftChar1Name
 
 - px: `x=275, y=2090, width=235, height=135`
-- relative: `x=0.071615, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.071615, y=0.725946, width=0.061198, height=0.046891`
 
 ### leftChar1Damage
 
@@ -56,7 +56,7 @@ type RelativeRect = {
 ### leftChar2Name
 
 - px: `x=500, y=2090, width=235, height=135`
-- relative: `x=0.130208, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.130208, y=0.725946, width=0.061198, height=0.046891`
 
 ### leftChar2Damage
 
@@ -66,7 +66,7 @@ type RelativeRect = {
 ### leftChar3Name
 
 - px: `x=725, y=2090, width=235, height=135`
-- relative: `x=0.188802, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.188802, y=0.725946, width=0.061198, height=0.046891`
 
 ### leftChar3Damage
 
@@ -76,7 +76,7 @@ type RelativeRect = {
 ### leftChar4Name
 
 - px: `x=950, y=2090, width=235, height=135`
-- relative: `x=0.247396, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.247396, y=0.725946, width=0.061198, height=0.046891`
 
 ### leftChar4Damage
 
@@ -86,7 +86,7 @@ type RelativeRect = {
 ### leftChar5Name
 
 - px: `x=1175, y=2090, width=235, height=135`
-- relative: `x=0.305990, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.305990, y=0.725946, width=0.061198, height=0.046891`
 
 ### leftChar5Damage
 
@@ -95,13 +95,13 @@ type RelativeRect = {
 
 ### leftChar6Name
 
-- px: `x=1300, y=2090, width=235, height=135`
-- relative: `x=0.338542, y=0.726294, width=0.061198, height=0.046891`
+- px: `x=1400, y=2090, width=235, height=135`
+- relative: `x=0.364583, y=0.725946, width=0.061198, height=0.046891`
 
 ### leftChar6Damage
 
-- px: `x=1300, y=1170, width=235, height=770`
-- relative: `x=0.338542, y=0.406391, width=0.061198, height=0.267454`
+- px: `x=1400, y=1170, width=235, height=770`
+- relative: `x=0.364583, y=0.406391, width=0.061198, height=0.267454`
 
 ## 右側ユーザー
 
@@ -112,8 +112,8 @@ type RelativeRect = {
 
 ### rightResult
 
-- px: `x=2330, y=900, width=390, height=190`
-- relative: `x=0.606771, y=0.312609, width=0.101563, height=0.066002`
+- px: `x=2270, y=900, width=390, height=190`
+- relative: `x=0.591146, y=0.312609, width=0.101563, height=0.066002`
 
 ### rightUserName
 
@@ -125,7 +125,7 @@ type RelativeRect = {
 ### rightChar1Name
 
 - px: `x=2180, y=2090, width=235, height=135`
-- relative: `x=0.567708, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.567708, y=0.725946, width=0.061198, height=0.046891`
 
 ### rightChar1Damage
 
@@ -135,7 +135,7 @@ type RelativeRect = {
 ### rightChar2Name
 
 - px: `x=2405, y=2090, width=235, height=135`
-- relative: `x=0.626302, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.626302, y=0.725946, width=0.061198, height=0.046891`
 
 ### rightChar2Damage
 
@@ -145,7 +145,7 @@ type RelativeRect = {
 ### rightChar3Name
 
 - px: `x=2630, y=2090, width=235, height=135`
-- relative: `x=0.684896, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.684896, y=0.725946, width=0.061198, height=0.046891`
 
 ### rightChar3Damage
 
@@ -155,7 +155,7 @@ type RelativeRect = {
 ### rightChar4Name
 
 - px: `x=2855, y=2090, width=235, height=135`
-- relative: `x=0.743490, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.743490, y=0.725946, width=0.061198, height=0.046891`
 
 ### rightChar4Damage
 
@@ -165,7 +165,7 @@ type RelativeRect = {
 ### rightChar5Name
 
 - px: `x=3080, y=2090, width=235, height=135`
-- relative: `x=0.802083, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.802083, y=0.725946, width=0.061198, height=0.046891`
 
 ### rightChar5Damage
 
@@ -175,7 +175,7 @@ type RelativeRect = {
 ### rightChar6Name
 
 - px: `x=3305, y=2090, width=235, height=135`
-- relative: `x=0.860677, y=0.726294, width=0.061198, height=0.046891`
+- relative: `x=0.860677, y=0.725946, width=0.061198, height=0.046891`
 
 ### rightChar6Damage
 
