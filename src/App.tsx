@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { parseBattleTime } from "./lib/battleTime";
 import { createCsv } from "./lib/csv";
 import { createRegionPreviews, type RegionPreview } from "./lib/imageRegions";
+import { recognizeResultText, type ResultOcrOutput } from "./lib/ocr";
 import type { BattleRecord } from "./types/battle";
 
 function createEmptyRecord(fileName: string): BattleRecord {
@@ -33,6 +34,8 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [previews, setPreviews] = useState<RegionPreview[]>([]);
   const [isProcessingPreview, setIsProcessingPreview] = useState(false);
+  const [resultOcr, setResultOcr] = useState<ResultOcrOutput | null>(null);
+  const [isRecognizingResult, setIsRecognizingResult] = useState(false);
 
   const csv = useMemo(() => {
     if (files.length === 0 || error) {
@@ -69,6 +72,7 @@ export default function App() {
                 setFiles(nextFiles);
                 setError(null);
                 setPreviews([]);
+                setResultOcr(null);
 
                 if (nextFiles[0]) {
                   setIsProcessingPreview(true);
@@ -77,6 +81,7 @@ export default function App() {
               } catch (caught) {
                 setFiles(nextFiles);
                 setPreviews([]);
+                setResultOcr(null);
                 setError(caught instanceof Error ? caught.message : "Invalid file.");
               } finally {
                 setIsProcessingPreview(false);
@@ -121,6 +126,56 @@ export default function App() {
                 </article>
               ))}
             </div>
+          </section>
+        )}
+
+        {previews.length > 0 && (
+          <section className="ocr-panel" aria-label="OCR デバッグ">
+            <div className="panel-heading">
+              <h2>OCR</h2>
+              <button
+                type="button"
+                disabled={isRecognizingResult}
+                onClick={async () => {
+                  const leftResult = previews.find((preview) => preview.name === "leftResult");
+                  const rightResult = previews.find((preview) => preview.name === "rightResult");
+
+                  if (!leftResult || !rightResult) {
+                    setError("Win/Lose 領域が見つかりません。");
+                    return;
+                  }
+
+                  try {
+                    setError(null);
+                    setIsRecognizingResult(true);
+                    setResultOcr(
+                      await recognizeResultText(leftResult.dataUrl, rightResult.dataUrl),
+                    );
+                  } catch (caught) {
+                    setResultOcr(null);
+                    setError(caught instanceof Error ? caught.message : "OCR failed.");
+                  } finally {
+                    setIsRecognizingResult(false);
+                  }
+                }}
+              >
+                {isRecognizingResult ? "実行中" : "Win/Lose OCR"}
+              </button>
+            </div>
+            {resultOcr && (
+              <div className="ocr-result-grid">
+                <div className="ocr-result-item">
+                  <span>leftResult</span>
+                  <strong>{resultOcr.leftResult ?? "unknown"}</strong>
+                  <code>{resultOcr.leftResultText || "(empty)"}</code>
+                </div>
+                <div className="ocr-result-item">
+                  <span>rightResult</span>
+                  <strong>{resultOcr.rightResult ?? "unknown"}</strong>
+                  <code>{resultOcr.rightResultText || "(empty)"}</code>
+                </div>
+              </div>
+            )}
           </section>
         )}
 

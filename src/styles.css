@@ -123,7 +123,8 @@ h1 {
   padding: 12px 14px;
 }
 
-.csv-panel {
+.csv-panel,
+.ocr-panel {
   display: grid;
   gap: 10px;
 }
@@ -161,6 +162,38 @@ h1 {
 .panel-heading button:disabled {
   background: #aeb7c2;
   cursor: not-allowed;
+}
+
+.ocr-result-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.ocr-result-item {
+  background: #ffffff;
+  border: 1px solid #dce2ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.ocr-result-item span {
+  color: #526071;
+  font-size: 13px;
+}
+
+.ocr-result-item strong {
+  font-size: 20px;
+}
+
+.ocr-result-item code {
+  background: #f4f6f8;
+  border-radius: 4px;
+  color: #243447;
+  overflow-wrap: anywhere;
+  padding: 6px;
 }
 
 textarea {
