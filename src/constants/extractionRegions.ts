@@ -7,7 +7,7 @@ export const sampleImageSize = {
 
 export const extractionRegions = {
   leftRoleIcon: { x: 0.041667, y: 0.312609, width: 0.044271, height: 0.059048 },
-  leftResult: { x: 0.09375, y: 0.312609, width: 0.101563, height: 0.066002 },
+  leftResult: { x: 0.085938, y: 0.312609, width: 0.101563, height: 0.066002 },
   leftUserName: { x: 0.325521, y: 0.302188, width: 0.200521, height: 0.027788 },
   leftChar1Name: { x: 0.071615, y: 0.725946, width: 0.061198, height: 0.046891 },
   leftChar1Damage: { x: 0.071615, y: 0.406391, width: 0.061198, height: 0.267454 },
@@ -22,7 +22,7 @@ export const extractionRegions = {
   leftChar6Name: { x: 0.364583, y: 0.725946, width: 0.061198, height: 0.046891 },
   leftChar6Damage: { x: 0.364583, y: 0.406391, width: 0.061198, height: 0.267454 },
   rightRoleIcon: { x: 0.539063, y: 0.312609, width: 0.044271, height: 0.059048 },
-  rightResult: { x: 0.591146, y: 0.312609, width: 0.101563, height: 0.066002 },
+  rightResult: { x: 0.583333, y: 0.312609, width: 0.101563, height: 0.066002 },
   rightUserName: { x: 0.815104, y: 0.302188, width: 0.200521, height: 0.027788 },
   rightChar1Name: { x: 0.567708, y: 0.725946, width: 0.061198, height: 0.046891 },
   rightChar1Damage: { x: 0.567708, y: 0.406391, width: 0.061198, height: 0.267454 },

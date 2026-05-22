@@ -26,7 +26,22 @@ describe("toPixelRect", () => {
       height: 770,
     });
     expect(toPixelRect(extractionRegions.rightResult, sampleImageSize)).toEqual({
-      x: 2270,
+      x: 2240,
+      y: 900,
+      width: 390,
+      height: 190,
+    });
+  });
+
+  it("converts result regions to sample image pixels", () => {
+    expect(toPixelRect(extractionRegions.leftResult, sampleImageSize)).toEqual({
+      x: 330,
+      y: 900,
+      width: 390,
+      height: 190,
+    });
+    expect(toPixelRect(extractionRegions.rightResult, sampleImageSize)).toEqual({
+      x: 2240,
       y: 900,
       width: 390,
       height: 190,

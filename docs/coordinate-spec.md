@@ -33,8 +33,8 @@ type RelativeRect = {
 
 ### leftResult
 
-- px: `x=360, y=900, width=390, height=190`
-- relative: `x=0.093750, y=0.312609, width=0.101563, height=0.066002`
+- px: `x=330, y=900, width=390, height=190`
+- relative: `x=0.085938, y=0.312609, width=0.101563, height=0.066002`
 
 ### leftUserName
 
@@ -112,8 +112,8 @@ type RelativeRect = {
 
 ### rightResult
 
-- px: `x=2270, y=900, width=390, height=190`
-- relative: `x=0.591146, y=0.312609, width=0.101563, height=0.066002`
+- px: `x=2240, y=900, width=390, height=190`
+- relative: `x=0.583333, y=0.312609, width=0.101563, height=0.066002`
 
 ### rightUserName
 
