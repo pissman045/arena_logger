@@ -15,9 +15,9 @@ describe("toPixelRect", () => {
   it("converts adjusted regions to sample image pixels", () => {
     expect(toPixelRect(extractionRegions.leftChar6Name, sampleImageSize)).toEqual({
       x: 1400,
-      y: 2090,
+      y: 2100,
       width: 235,
-      height: 135,
+      height: 100,
     });
     expect(toPixelRect(extractionRegions.leftChar6Damage, sampleImageSize)).toEqual({
       x: 1400,
