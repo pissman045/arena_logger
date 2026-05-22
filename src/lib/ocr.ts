@@ -7,6 +7,8 @@ export type ResultOcrOutput = {
   rightResult: "win" | "lose" | null;
 };
 
+type BattleResult = "win" | "lose";
+
 export async function recognizeResultText(
   leftResultImage: string,
   rightResultImage: string,
@@ -23,19 +25,51 @@ export async function recognizeResultText(
       recognizeText(worker, leftResultImage),
       recognizeText(worker, rightResultImage),
     ]);
+    const results = inferBattleResults(leftResultText, rightResultText);
 
     return {
       leftResultText,
-      leftResult: normalizeBattleResult(leftResultText),
+      leftResult: results.leftResult,
       rightResultText,
-      rightResult: normalizeBattleResult(rightResultText),
+      rightResult: results.rightResult,
     };
   } finally {
     await worker.terminate();
   }
 }
 
-export function normalizeBattleResult(text: string): "win" | "lose" | null {
+export function inferBattleResults(
+  leftResultText: string,
+  rightResultText: string,
+): {
+  leftResult: BattleResult | null;
+  rightResult: BattleResult | null;
+} {
+  const leftResult = normalizeBattleResult(leftResultText);
+
+  if (leftResult) {
+    return {
+      leftResult,
+      rightResult: invertBattleResult(leftResult),
+    };
+  }
+
+  const rightResult = normalizeBattleResult(rightResultText);
+
+  if (rightResult) {
+    return {
+      leftResult: invertBattleResult(rightResult),
+      rightResult,
+    };
+  }
+
+  return {
+    leftResult: null,
+    rightResult: null,
+  };
+}
+
+export function normalizeBattleResult(text: string): BattleResult | null {
   const normalized = text.toLowerCase().replace(/[^a-z]/g, "");
 
   if (normalized.includes("win")) {
@@ -47,6 +81,10 @@ export function normalizeBattleResult(text: string): "win" | "lose" | null {
   }
 
   return null;
+}
+
+function invertBattleResult(result: BattleResult): BattleResult {
+  return result === "win" ? "lose" : "win";
 }
 
 async function recognizeText(

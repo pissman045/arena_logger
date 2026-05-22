@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeBattleResult } from "../../src/lib/ocr";
+import { inferBattleResults, normalizeBattleResult } from "../../src/lib/ocr";
 
 describe("normalizeBattleResult", () => {
   it("normalizes win-like OCR text", () => {
@@ -16,5 +16,36 @@ describe("normalizeBattleResult", () => {
     expect(normalizeBattleResult("")).toBeNull();
     expect(normalizeBattleResult("in")).toBeNull();
     expect(normalizeBattleResult("unknown")).toBeNull();
+  });
+});
+
+describe("inferBattleResults", () => {
+  it("uses a readable left result and infers the opposite right result", () => {
+    expect(inferBattleResults("Win", "")).toEqual({
+      leftResult: "win",
+      rightResult: "lose",
+    });
+    expect(inferBattleResults("Lose", "")).toEqual({
+      leftResult: "lose",
+      rightResult: "win",
+    });
+  });
+
+  it("uses a readable right result and infers the opposite left result", () => {
+    expect(inferBattleResults("", "win")).toEqual({
+      leftResult: "lose",
+      rightResult: "win",
+    });
+    expect(inferBattleResults("", "Lose")).toEqual({
+      leftResult: "win",
+      rightResult: "lose",
+    });
+  });
+
+  it("returns null results when neither side is readable", () => {
+    expect(inferBattleResults("", "unknown")).toEqual({
+      leftResult: null,
+      rightResult: null,
+    });
   });
 });
