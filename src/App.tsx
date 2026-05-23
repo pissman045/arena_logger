@@ -12,6 +12,7 @@ import {
   type ResultOcrOutput,
   type UserNameOcrOutput,
 } from "./lib/ocr";
+import { createTarArchive, type TarEntry } from "./lib/tar";
 import type { BattleRecord } from "./types/battle";
 
 function createEmptyRecord(fileName: string): BattleRecord {
@@ -38,25 +39,33 @@ function createEmptyRecord(fileName: string): BattleRecord {
   };
 }
 
-function downloadGroundTruthFiles(files: GroundTruthFile[]): void {
-  files.forEach((file, index) => {
-    window.setTimeout(() => {
-      const link = document.createElement("a");
+async function downloadGroundTruthArchive(sourceFileName: string, files: GroundTruthFile[]) {
+  const entries: TarEntry[] = [];
 
-      if (file.kind === "image") {
-        link.href = file.dataUrl;
-      } else {
-        link.href = URL.createObjectURL(new Blob([file.text], { type: "text/plain" }));
-      }
+  for (const file of files) {
+    if (file.kind === "image") {
+      entries.push({
+        fileName: file.fileName,
+        data: new Uint8Array(await (await fetch(file.dataUrl)).arrayBuffer()),
+      });
+    } else {
+      entries.push({
+        fileName: file.fileName,
+        data: file.text,
+      });
+    }
+  }
 
-      link.download = file.fileName;
-      link.click();
+  const archive = createTarArchive(entries);
+  const archiveBuffer = new ArrayBuffer(archive.byteLength);
+  new Uint8Array(archiveBuffer).set(archive);
+  const archiveUrl = URL.createObjectURL(new Blob([archiveBuffer], { type: "application/x-tar" }));
+  const link = document.createElement("a");
 
-      if (file.kind === "text") {
-        URL.revokeObjectURL(link.href);
-      }
-    }, index * 80);
-  });
+  link.href = archiveUrl;
+  link.download = `${sourceFileName.replace(/\.[^.]+$/, "")}-ground-truth.tar`;
+  link.click();
+  URL.revokeObjectURL(archiveUrl);
 }
 
 export default function App() {
@@ -354,14 +363,15 @@ export default function App() {
                     disabled={characterNameOcr.some(
                       (item) => !groundTruthLabels[item.fieldName]?.trim(),
                     )}
-                    onClick={() => {
+                    onClick={async () => {
                       const sourceFileName = files[0]?.name ?? "character-names.png";
                       const groundTruthItems = characterNameOcr.map((item) => ({
                         ...item,
                         characterName: groundTruthLabels[item.fieldName]?.trim() ?? "",
                       }));
 
-                      downloadGroundTruthFiles(
+                      await downloadGroundTruthArchive(
+                        sourceFileName,
                         createCharacterNameGroundTruthFiles(sourceFileName, groundTruthItems),
                       );
                     }}
