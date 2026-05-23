@@ -1,5 +1,7 @@
 import { createWorker, OEM, PSM } from "tesseract.js";
 
+import { characterNames } from "../constants/characterNames";
+
 export type ResultOcrOutput = {
   leftResultText: string;
   leftResult: "win" | "lose" | null;
@@ -38,6 +40,10 @@ const characterNameAllowedPattern = new RegExp(
   `[^${escapeCharacterClass(characterNameWhitelist)}]`,
   "gu",
 );
+const localJpnWorkerOptions: Partial<Tesseract.WorkerOptions> = {
+  langPath: "/tessdata",
+  gzip: false,
+};
 
 export async function recognizeResultText(
   leftResultImage: string,
@@ -146,7 +152,7 @@ export function normalizeUserName(text: string): string {
 export async function recognizeCharacterNames(
   characterNameImages: Array<{ fieldName: string; image: string }>,
 ): Promise<CharacterNameOcrItem[]> {
-  const worker = await createWorker(["jpn"], OEM.LSTM_ONLY);
+  const worker = await createWorker(["jpn"], OEM.LSTM_ONLY, localJpnWorkerOptions);
 
   try {
     await worker.setParameters({
@@ -155,6 +161,7 @@ export async function recognizeCharacterNames(
       user_defined_dpi: "200",
       load_system_dawg: "0",
       load_freq_dawg: "0",
+      preserve_interword_spaces: "1",
     });
 
     const items: CharacterNameOcrItem[] = [];
@@ -162,11 +169,13 @@ export async function recognizeCharacterNames(
     for (const { fieldName, image } of characterNameImages) {
       const preprocessedImage = await preprocessCharacterNameImage(image);
       const text = await recognizeText(worker, preprocessedImage);
+      const rawCharacterName = normalizeCharacterName(text);
+      const characterName = correctCharacterName(rawCharacterName);
 
       items.push({
         fieldName,
         text,
-        characterName: normalizeCharacterName(text),
+        characterName,
         preprocessedImage,
       });
     }
@@ -187,6 +196,64 @@ export function normalizeCharacterName(text: string): string {
     .filter(Boolean)
     .join("")
     .replace(characterNameAllowedPattern, "");
+}
+
+export function correctCharacterName(text: string): string {
+  const normalized = normalizeCharacterName(text);
+
+  if (!normalized) {
+    return "";
+  }
+
+  if (characterNames.includes(normalized)) {
+    return normalized;
+  }
+
+  let bestName = normalized;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (const characterName of characterNames) {
+    const normalizedCandidate = normalizeCharacterName(characterName);
+    const distance = calculateLevenshteinDistance(normalized, normalizedCandidate);
+    const score = distance / Math.max(normalized.length, normalizedCandidate.length);
+
+    if (score > bestScore || (score === bestScore && distance >= bestDistance)) {
+      continue;
+    }
+
+    bestName = characterName;
+    bestDistance = distance;
+    bestScore = score;
+  }
+
+  return bestScore <= 0.67 ? bestName : normalized;
+}
+
+function calculateLevenshteinDistance(left: string, right: string): number {
+  const leftCharacters = [...left];
+  const rightCharacters = [...right];
+  const previous = Array.from({ length: rightCharacters.length + 1 }, (_, index) => index);
+  const current = new Array<number>(rightCharacters.length + 1);
+
+  for (let leftIndex = 1; leftIndex <= leftCharacters.length; leftIndex += 1) {
+    current[0] = leftIndex;
+
+    for (let rightIndex = 1; rightIndex <= rightCharacters.length; rightIndex += 1) {
+      const substitutionCost =
+        leftCharacters[leftIndex - 1] === rightCharacters[rightIndex - 1] ? 0 : 1;
+
+      current[rightIndex] = Math.min(
+        current[rightIndex - 1] + 1,
+        previous[rightIndex] + 1,
+        previous[rightIndex - 1] + substitutionCost,
+      );
+    }
+
+    previous.splice(0, previous.length, ...current);
+  }
+
+  return previous[rightCharacters.length] ?? 0;
 }
 
 export async function preprocessCharacterNameImage(dataUrl: string): Promise<string> {

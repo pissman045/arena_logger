@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  correctCharacterName,
   inferBattleResults,
   normalizeBattleResult,
   normalizeCharacterName,
@@ -76,5 +77,19 @@ describe("normalizeCharacterName", () => {
 
   it("keeps only supported character-name characters", () => {
     expect(normalizeCharacterName("アルA!?（正月）")).toBe("アル（正月）");
+  });
+});
+
+describe("correctCharacterName", () => {
+  it("keeps exact character names", () => {
+    expect(correctCharacterName("ユズ")).toBe("ユズ");
+  });
+
+  it("corrects OCR output to the closest character name", () => {
+    expect(correctCharacterName("シュンン")).toBe("シュン");
+  });
+
+  it("keeps distant text unchanged", () => {
+    expect(correctCharacterName("カカカカカカ")).toBe("カカカカカカ");
   });
 });
