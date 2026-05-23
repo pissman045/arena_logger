@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type DragEvent } from "react";
 import { characterNames } from "./constants/characterNames";
 import { parseBattleTime } from "./lib/battleTime";
 import { createCsv } from "./lib/csv";
@@ -62,6 +62,7 @@ function downloadGroundTruthFiles(files: GroundTruthFile[]): void {
 export default function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [previews, setPreviews] = useState<RegionPreview[]>([]);
   const [isProcessingPreview, setIsProcessingPreview] = useState(false);
   const [resultOcr, setResultOcr] = useState<ResultOcrOutput | null>(null);
@@ -84,6 +85,65 @@ export default function App() {
     }
   }, [error, files]);
 
+  async function handleSelectedFiles(nextFiles: File[]): Promise<void> {
+    try {
+      nextFiles.forEach((file) => parseBattleTime(file.name));
+      setFiles(nextFiles);
+      setError(null);
+      setPreviews([]);
+      setResultOcr(null);
+      setUserNameOcr(null);
+      setCharacterNameOcr([]);
+      setGroundTruthLabels({});
+
+      if (nextFiles[0]) {
+        setIsProcessingPreview(true);
+        setPreviews(await createRegionPreviews(nextFiles[0]));
+      }
+    } catch (caught) {
+      setFiles(nextFiles);
+      setPreviews([]);
+      setResultOcr(null);
+      setUserNameOcr(null);
+      setCharacterNameOcr([]);
+      setGroundTruthLabels({});
+      setError(caught instanceof Error ? caught.message : "Invalid file.");
+    } finally {
+      setIsProcessingPreview(false);
+    }
+  }
+
+  function handleDragOver(event: DragEvent<HTMLLabelElement>): void {
+    event.preventDefault();
+
+    if (event.dataTransfer.types.includes("Files")) {
+      event.dataTransfer.dropEffect = "copy";
+      setIsDraggingFiles(true);
+    }
+  }
+
+  function handleDragLeave(event: DragEvent<HTMLLabelElement>): void {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setIsDraggingFiles(false);
+    }
+  }
+
+  async function handleDrop(event: DragEvent<HTMLLabelElement>): Promise<void> {
+    event.preventDefault();
+    setIsDraggingFiles(false);
+
+    const droppedFiles = Array.from(event.dataTransfer.files).filter((file) =>
+      ["image/png", "image/jpeg"].includes(file.type),
+    );
+
+    if (droppedFiles.length === 0) {
+      setError("PNG または JPEG 画像をドロップしてください。");
+      return;
+    }
+
+    await handleSelectedFiles(droppedFiles);
+  }
+
   return (
     <main className="app-shell">
       <section className="workspace">
@@ -94,7 +154,13 @@ export default function App() {
           </div>
         </header>
 
-        <label className="drop-zone">
+        <label
+          className={`drop-zone${isDraggingFiles ? " is-dragging" : ""}`}
+          onDragEnter={handleDragOver}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <input
             accept="image/png,image/jpeg"
             multiple
@@ -102,34 +168,11 @@ export default function App() {
             onChange={async (event) => {
               const nextFiles = Array.from(event.currentTarget.files ?? []);
 
-              try {
-                nextFiles.forEach((file) => parseBattleTime(file.name));
-                setFiles(nextFiles);
-                setError(null);
-                setPreviews([]);
-                setResultOcr(null);
-                setUserNameOcr(null);
-                setCharacterNameOcr([]);
-                setGroundTruthLabels({});
-
-                if (nextFiles[0]) {
-                  setIsProcessingPreview(true);
-                  setPreviews(await createRegionPreviews(nextFiles[0]));
-                }
-              } catch (caught) {
-                setFiles(nextFiles);
-                setPreviews([]);
-                setResultOcr(null);
-                setUserNameOcr(null);
-                setCharacterNameOcr([]);
-                setGroundTruthLabels({});
-                setError(caught instanceof Error ? caught.message : "Invalid file.");
-              } finally {
-                setIsProcessingPreview(false);
-              }
+              await handleSelectedFiles(nextFiles);
+              event.currentTarget.value = "";
             }}
           />
-          <span>画像を選択</span>
+          <span>{isDraggingFiles ? "ここにドロップ" : "画像を選択 / ドロップ"}</span>
         </label>
 
         {files.length > 0 && (
