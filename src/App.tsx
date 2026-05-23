@@ -12,6 +12,7 @@ import {
   type ResultOcrOutput,
   type UserNameOcrOutput,
 } from "./lib/ocr";
+import { recognizeRoleIcons, type RoleIconOutput } from "./lib/roleIcon";
 import { createTarArchive, type TarEntry } from "./lib/tar";
 import type { BattleRecord } from "./types/battle";
 
@@ -75,9 +76,11 @@ export default function App() {
   const [previews, setPreviews] = useState<RegionPreview[]>([]);
   const [isProcessingPreview, setIsProcessingPreview] = useState(false);
   const [resultOcr, setResultOcr] = useState<ResultOcrOutput | null>(null);
+  const [roleOcr, setRoleOcr] = useState<RoleIconOutput | null>(null);
   const [userNameOcr, setUserNameOcr] = useState<UserNameOcrOutput | null>(null);
   const [characterNameOcr, setCharacterNameOcr] = useState<CharacterNameOcrItem[]>([]);
   const [groundTruthLabels, setGroundTruthLabels] = useState<Record<string, string>>({});
+  const [isRecognizingRole, setIsRecognizingRole] = useState(false);
   const [isRecognizingResult, setIsRecognizingResult] = useState(false);
   const [isRecognizingUserName, setIsRecognizingUserName] = useState(false);
   const [isRecognizingCharacterName, setIsRecognizingCharacterName] = useState(false);
@@ -100,6 +103,7 @@ export default function App() {
       setFiles(nextFiles);
       setError(null);
       setPreviews([]);
+      setRoleOcr(null);
       setResultOcr(null);
       setUserNameOcr(null);
       setCharacterNameOcr([]);
@@ -112,6 +116,7 @@ export default function App() {
     } catch (caught) {
       setFiles(nextFiles);
       setPreviews([]);
+      setRoleOcr(null);
       setResultOcr(null);
       setUserNameOcr(null);
       setCharacterNameOcr([]);
@@ -230,13 +235,50 @@ export default function App() {
               <div className="button-group">
                 <button
                   type="button"
+                  disabled={isRecognizingRole}
+                  onClick={async () => {
+                    const leftRoleIcon = previews.find((preview) => preview.name === "leftRoleIcon");
+                    const rightRoleIcon = previews.find(
+                      (preview) => preview.name === "rightRoleIcon",
+                    );
+                    const sourceFileName = files[0]?.name ?? "unknown";
+
+                    if (!leftRoleIcon || !rightRoleIcon) {
+                      setError(
+                        `${sourceFileName}: leftRoleIcon / rightRoleIcon の切り出しに失敗しました。`,
+                      );
+                      return;
+                    }
+
+                    try {
+                      setError(null);
+                      setIsRecognizingRole(true);
+                      setRoleOcr(
+                        await recognizeRoleIcons(leftRoleIcon.dataUrl, rightRoleIcon.dataUrl),
+                      );
+                    } catch (caught) {
+                      setRoleOcr(null);
+                      const message =
+                        caught instanceof Error ? caught.message : "Role icon detection failed.";
+
+                      setError(`${sourceFileName}: 攻撃/防衛判定に失敗しました。 ${message}`);
+                    } finally {
+                      setIsRecognizingRole(false);
+                    }
+                  }}
+                >
+                  {isRecognizingRole ? "実行中" : "攻撃/防衛判定"}
+                </button>
+                <button
+                  type="button"
                   disabled={isRecognizingResult}
                   onClick={async () => {
                     const leftResult = previews.find((preview) => preview.name === "leftResult");
                     const rightResult = previews.find((preview) => preview.name === "rightResult");
+                    const sourceFileName = files[0]?.name ?? "unknown";
 
                     if (!leftResult || !rightResult) {
-                      setError("Win/Lose 領域が見つかりません。");
+                      setError(`${sourceFileName}: leftResult / rightResult 領域が見つかりません。`);
                       return;
                     }
 
@@ -248,7 +290,9 @@ export default function App() {
                       );
                     } catch (caught) {
                       setResultOcr(null);
-                      setError(caught instanceof Error ? caught.message : "OCR failed.");
+                      const message = caught instanceof Error ? caught.message : "OCR failed.";
+
+                      setError(`${sourceFileName}: Win/Lose OCR に失敗しました。 ${message}`);
                     } finally {
                       setIsRecognizingResult(false);
                     }
@@ -266,9 +310,12 @@ export default function App() {
                     const rightUserName = previews.find(
                       (preview) => preview.name === "rightUserName",
                     );
+                    const sourceFileName = files[0]?.name ?? "unknown";
 
                     if (!leftUserName || !rightUserName) {
-                      setError("ユーザー名領域が見つかりません。");
+                      setError(
+                        `${sourceFileName}: leftUserName / rightUserName 領域が見つかりません。`,
+                      );
                       return;
                     }
 
@@ -280,7 +327,9 @@ export default function App() {
                       );
                     } catch (caught) {
                       setUserNameOcr(null);
-                      setError(caught instanceof Error ? caught.message : "OCR failed.");
+                      const message = caught instanceof Error ? caught.message : "OCR failed.";
+
+                      setError(`${sourceFileName}: ユーザー名 OCR に失敗しました。 ${message}`);
                     } finally {
                       setIsRecognizingUserName(false);
                     }
@@ -298,9 +347,10 @@ export default function App() {
                         fieldName: preview.name,
                         image: preview.dataUrl,
                       }));
+                    const sourceFileName = files[0]?.name ?? "unknown";
 
                     if (characterNames.length !== 12) {
-                      setError("キャラ名領域が見つかりません。");
+                      setError(`${sourceFileName}: キャラ名領域が 12 個そろっていません。`);
                       return;
                     }
 
@@ -318,7 +368,9 @@ export default function App() {
                     } catch (caught) {
                       setCharacterNameOcr([]);
                       setGroundTruthLabels({});
-                      setError(caught instanceof Error ? caught.message : "OCR failed.");
+                      const message = caught instanceof Error ? caught.message : "OCR failed.";
+
+                      setError(`${sourceFileName}: キャラ名 OCR に失敗しました。 ${message}`);
                     } finally {
                       setIsRecognizingCharacterName(false);
                     }
@@ -328,6 +380,26 @@ export default function App() {
                 </button>
               </div>
             </div>
+            {roleOcr && (
+              <div className="ocr-result-grid">
+                <div className="ocr-result-item">
+                  <span>leftRoleIcon</span>
+                  <strong>{roleOcr.leftRole ?? "unknown"}</strong>
+                  <code>
+                    attack {roleOcr.leftAttackScore.toFixed(4)} / defense{" "}
+                    {roleOcr.leftDefenseScore.toFixed(4)}
+                  </code>
+                </div>
+                <div className="ocr-result-item">
+                  <span>rightRoleIcon</span>
+                  <strong>{roleOcr.rightRole ?? "unknown"}</strong>
+                  <code>
+                    attack {roleOcr.rightAttackScore.toFixed(4)} / defense{" "}
+                    {roleOcr.rightDefenseScore.toFixed(4)}
+                  </code>
+                </div>
+              </div>
+            )}
             {resultOcr && (
               <div className="ocr-result-grid">
                 <div className="ocr-result-item">
