@@ -175,10 +175,11 @@ export default function App() {
             multiple
             type="file"
             onChange={async (event) => {
-              const nextFiles = Array.from(event.currentTarget.files ?? []);
+              const input = event.currentTarget;
+              const nextFiles = Array.from(input.files ?? []);
 
               await handleSelectedFiles(nextFiles);
-              event.currentTarget.value = "";
+              input.value = "";
             }}
           />
           <span>{isDraggingFiles ? "ここにドロップ" : "画像を選択 / ドロップ"}</span>
