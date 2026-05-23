@@ -172,6 +172,26 @@ h1 {
   justify-content: flex-end;
 }
 
+.panel-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.panel-actions button {
+  background: #1f7a68;
+  border: 0;
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.panel-actions button:disabled {
+  background: #aeb7c2;
+  cursor: not-allowed;
+}
+
 .ocr-result-grid {
   display: grid;
   gap: 12px;
@@ -206,6 +226,19 @@ h1 {
   color: #243447;
   overflow-wrap: anywhere;
   padding: 6px;
+}
+
+.ground-truth-label {
+  display: grid;
+  gap: 4px;
+}
+
+.ground-truth-label input {
+  border: 1px solid #cbd4df;
+  border-radius: 6px;
+  min-height: 34px;
+  padding: 0 8px;
+  width: 100%;
 }
 
 .ocr-preprocessed-frame {

@@ -77,6 +77,12 @@ DevContainer は使わず、ローカル環境で開発する前提の TODO。
   - 二値化
   - 拡大
   - コントラスト調整
+- [ ] キャラ名 OCR の学習データを作成する
+  - `docs/tesseract-training.md` の形式で ground truth を作る
+  - OCR 失敗例を優先して集める
+  - 1 行名と 2 行名の両方を含める
+- [ ] `tesstrain` で `jpn.traineddata` を fine-tuning する
+- [ ] 学習済み `jpn.traineddata` を `public/tessdata/` に配置して精度を比較する
 
 ## 6. 攻撃/防衛アイコン判定
 

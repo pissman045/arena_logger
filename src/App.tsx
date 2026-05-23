@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { characterNames } from "./constants/characterNames";
 import { parseBattleTime } from "./lib/battleTime";
 import { createCsv } from "./lib/csv";
+import { createCharacterNameGroundTruthFiles, type GroundTruthFile } from "./lib/groundTruth";
 import { createRegionPreviews, type RegionPreview } from "./lib/imageRegions";
 import {
   recognizeResultText,
@@ -36,6 +38,27 @@ function createEmptyRecord(fileName: string): BattleRecord {
   };
 }
 
+function downloadGroundTruthFiles(files: GroundTruthFile[]): void {
+  files.forEach((file, index) => {
+    window.setTimeout(() => {
+      const link = document.createElement("a");
+
+      if (file.kind === "image") {
+        link.href = file.dataUrl;
+      } else {
+        link.href = URL.createObjectURL(new Blob([file.text], { type: "text/plain" }));
+      }
+
+      link.download = file.fileName;
+      link.click();
+
+      if (file.kind === "text") {
+        URL.revokeObjectURL(link.href);
+      }
+    }, index * 80);
+  });
+}
+
 export default function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +67,7 @@ export default function App() {
   const [resultOcr, setResultOcr] = useState<ResultOcrOutput | null>(null);
   const [userNameOcr, setUserNameOcr] = useState<UserNameOcrOutput | null>(null);
   const [characterNameOcr, setCharacterNameOcr] = useState<CharacterNameOcrItem[]>([]);
+  const [groundTruthLabels, setGroundTruthLabels] = useState<Record<string, string>>({});
   const [isRecognizingResult, setIsRecognizingResult] = useState(false);
   const [isRecognizingUserName, setIsRecognizingUserName] = useState(false);
   const [isRecognizingCharacterName, setIsRecognizingCharacterName] = useState(false);
@@ -86,6 +110,7 @@ export default function App() {
                 setResultOcr(null);
                 setUserNameOcr(null);
                 setCharacterNameOcr([]);
+                setGroundTruthLabels({});
 
                 if (nextFiles[0]) {
                   setIsProcessingPreview(true);
@@ -97,6 +122,7 @@ export default function App() {
                 setResultOcr(null);
                 setUserNameOcr(null);
                 setCharacterNameOcr([]);
+                setGroundTruthLabels({});
                 setError(caught instanceof Error ? caught.message : "Invalid file.");
               } finally {
                 setIsProcessingPreview(false);
@@ -228,9 +254,17 @@ export default function App() {
                     try {
                       setError(null);
                       setIsRecognizingCharacterName(true);
-                      setCharacterNameOcr(await recognizeCharacterNames(characterNames));
+                      const nextCharacterNameOcr = await recognizeCharacterNames(characterNames);
+
+                      setCharacterNameOcr(nextCharacterNameOcr);
+                      setGroundTruthLabels(
+                        Object.fromEntries(
+                          nextCharacterNameOcr.map((item) => [item.fieldName, item.characterName]),
+                        ),
+                      );
                     } catch (caught) {
                       setCharacterNameOcr([]);
+                      setGroundTruthLabels({});
                       setError(caught instanceof Error ? caught.message : "OCR failed.");
                     } finally {
                       setIsRecognizingCharacterName(false);
@@ -270,18 +304,61 @@ export default function App() {
               </div>
             )}
             {characterNameOcr.length > 0 && (
-              <div className="ocr-result-grid character-result-grid">
-                {characterNameOcr.map((item) => (
-                  <div className="ocr-result-item" key={item.fieldName}>
-                    <span>{item.fieldName}</span>
-                    <div className="ocr-preprocessed-frame">
-                      <img alt="" src={item.preprocessedImage} />
+              <>
+                <div className="panel-actions">
+                  <button
+                    type="button"
+                    disabled={characterNameOcr.some(
+                      (item) => !groundTruthLabels[item.fieldName]?.trim(),
+                    )}
+                    onClick={() => {
+                      const sourceFileName = files[0]?.name ?? "character-names.png";
+                      const groundTruthItems = characterNameOcr.map((item) => ({
+                        ...item,
+                        characterName: groundTruthLabels[item.fieldName]?.trim() ?? "",
+                      }));
+
+                      downloadGroundTruthFiles(
+                        createCharacterNameGroundTruthFiles(sourceFileName, groundTruthItems),
+                      );
+                    }}
+                  >
+                    学習データDL
+                  </button>
+                </div>
+                <datalist id="character-name-options">
+                  {characterNames.map((characterName) => (
+                    <option key={characterName} value={characterName} />
+                  ))}
+                </datalist>
+                <div className="ocr-result-grid character-result-grid">
+                  {characterNameOcr.map((item) => (
+                    <div className="ocr-result-item" key={item.fieldName}>
+                      <span>{item.fieldName}</span>
+                      <div className="ocr-preprocessed-frame">
+                        <img alt="" src={item.preprocessedImage} />
+                      </div>
+                      <strong>{item.characterName || "unknown"}</strong>
+                      <code>{item.text || "(empty)"}</code>
+                      <label className="ground-truth-label">
+                        <span>正解</span>
+                        <input
+                          list="character-name-options"
+                          value={groundTruthLabels[item.fieldName] ?? ""}
+                          onChange={(event) => {
+                            const { value } = event.currentTarget;
+
+                            setGroundTruthLabels((currentLabels) => ({
+                              ...currentLabels,
+                              [item.fieldName]: value,
+                            }));
+                          }}
+                        />
+                      </label>
                     </div>
-                    <strong>{item.characterName || "unknown"}</strong>
-                    <code>{item.text || "(empty)"}</code>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </>
             )}
           </section>
         )}
