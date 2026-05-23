@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   inferBattleResults,
   normalizeBattleResult,
+  normalizeCharacterName,
   normalizeUserName,
 } from "../../src/lib/ocr";
 
@@ -61,5 +62,19 @@ describe("normalizeUserName", () => {
 
   it("removes symbols and punctuation", () => {
     expect(normalizeUserName("【先生】!!")).toBe("先生");
+  });
+});
+
+describe("normalizeCharacterName", () => {
+  it("trims and joins multiline character names", () => {
+    expect(normalizeCharacterName("  御坂\n  美琴  ")).toBe("御坂美琴");
+  });
+
+  it("drops empty lines", () => {
+    expect(normalizeCharacterName("\nヒナ\n\n")).toBe("ヒナ");
+  });
+
+  it("keeps only supported character-name characters", () => {
+    expect(normalizeCharacterName("アルA!?（正月）")).toBe("アル（正月）");
   });
 });

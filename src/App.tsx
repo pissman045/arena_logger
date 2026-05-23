@@ -4,7 +4,9 @@ import { createCsv } from "./lib/csv";
 import { createRegionPreviews, type RegionPreview } from "./lib/imageRegions";
 import {
   recognizeResultText,
+  recognizeCharacterNames,
   recognizeUserNames,
+  type CharacterNameOcrItem,
   type ResultOcrOutput,
   type UserNameOcrOutput,
 } from "./lib/ocr";
@@ -41,8 +43,10 @@ export default function App() {
   const [isProcessingPreview, setIsProcessingPreview] = useState(false);
   const [resultOcr, setResultOcr] = useState<ResultOcrOutput | null>(null);
   const [userNameOcr, setUserNameOcr] = useState<UserNameOcrOutput | null>(null);
+  const [characterNameOcr, setCharacterNameOcr] = useState<CharacterNameOcrItem[]>([]);
   const [isRecognizingResult, setIsRecognizingResult] = useState(false);
   const [isRecognizingUserName, setIsRecognizingUserName] = useState(false);
+  const [isRecognizingCharacterName, setIsRecognizingCharacterName] = useState(false);
 
   const csv = useMemo(() => {
     if (files.length === 0 || error) {
@@ -81,6 +85,7 @@ export default function App() {
                 setPreviews([]);
                 setResultOcr(null);
                 setUserNameOcr(null);
+                setCharacterNameOcr([]);
 
                 if (nextFiles[0]) {
                   setIsProcessingPreview(true);
@@ -91,6 +96,7 @@ export default function App() {
                 setPreviews([]);
                 setResultOcr(null);
                 setUserNameOcr(null);
+                setCharacterNameOcr([]);
                 setError(caught instanceof Error ? caught.message : "Invalid file.");
               } finally {
                 setIsProcessingPreview(false);
@@ -203,6 +209,36 @@ export default function App() {
                 >
                   {isRecognizingUserName ? "実行中" : "ユーザー名 OCR"}
                 </button>
+                <button
+                  type="button"
+                  disabled={isRecognizingCharacterName}
+                  onClick={async () => {
+                    const characterNames = previews
+                      .filter((preview) => /^(left|right)Char[1-6]Name$/.test(preview.name))
+                      .map((preview) => ({
+                        fieldName: preview.name,
+                        image: preview.dataUrl,
+                      }));
+
+                    if (characterNames.length !== 12) {
+                      setError("キャラ名領域が見つかりません。");
+                      return;
+                    }
+
+                    try {
+                      setError(null);
+                      setIsRecognizingCharacterName(true);
+                      setCharacterNameOcr(await recognizeCharacterNames(characterNames));
+                    } catch (caught) {
+                      setCharacterNameOcr([]);
+                      setError(caught instanceof Error ? caught.message : "OCR failed.");
+                    } finally {
+                      setIsRecognizingCharacterName(false);
+                    }
+                  }}
+                >
+                  {isRecognizingCharacterName ? "実行中" : "キャラ名 OCR"}
+                </button>
               </div>
             </div>
             {resultOcr && (
@@ -231,6 +267,20 @@ export default function App() {
                   <strong>{userNameOcr.rightUserName || "unknown"}</strong>
                   <code>{userNameOcr.rightUserNameText || "(empty)"}</code>
                 </div>
+              </div>
+            )}
+            {characterNameOcr.length > 0 && (
+              <div className="ocr-result-grid character-result-grid">
+                {characterNameOcr.map((item) => (
+                  <div className="ocr-result-item" key={item.fieldName}>
+                    <span>{item.fieldName}</span>
+                    <div className="ocr-preprocessed-frame">
+                      <img alt="" src={item.preprocessedImage} />
+                    </div>
+                    <strong>{item.characterName || "unknown"}</strong>
+                    <code>{item.text || "(empty)"}</code>
+                  </div>
+                ))}
               </div>
             )}
           </section>
