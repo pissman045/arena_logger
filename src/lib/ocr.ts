@@ -40,7 +40,8 @@ const characterNameAllowedPattern = new RegExp(
   `[^${escapeCharacterClass(characterNameWhitelist)}]`,
   "gu",
 );
-const localJpnWorkerOptions: Partial<Tesseract.WorkerOptions> = {
+const characterNameWorkerLanguage = "bluearchive_jpn";
+const localTessdataWorkerOptions: Partial<Tesseract.WorkerOptions> = {
   langPath: "/tessdata",
   gzip: false,
 };
@@ -152,15 +153,17 @@ export function normalizeUserName(text: string): string {
 export async function recognizeCharacterNames(
   characterNameImages: Array<{ fieldName: string; image: string }>,
 ): Promise<CharacterNameOcrItem[]> {
-  const worker = await createWorker(["jpn"], OEM.LSTM_ONLY, localJpnWorkerOptions);
+  const worker = await createWorker(
+    [characterNameWorkerLanguage],
+    OEM.LSTM_ONLY,
+    localTessdataWorkerOptions,
+  );
 
   try {
     await worker.setParameters({
       tessedit_pageseg_mode: PSM.SINGLE_LINE,
       tessedit_char_whitelist: characterNameWhitelist,
       user_defined_dpi: "200",
-      load_system_dawg: "0",
-      load_freq_dawg: "0",
       preserve_interword_spaces: "1",
     });
 
