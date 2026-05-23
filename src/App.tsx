@@ -7,8 +7,10 @@ import { createRegionPreviews, type RegionPreview } from "./lib/imageRegions";
 import {
   recognizeResultText,
   recognizeCharacterNames,
+  recognizeDamageValues,
   recognizeUserNames,
   type CharacterNameOcrItem,
+  type DamageOcrItem,
   type ResultOcrOutput,
   type UserNameOcrOutput,
 } from "./lib/ocr";
@@ -79,11 +81,13 @@ export default function App() {
   const [roleOcr, setRoleOcr] = useState<RoleIconOutput | null>(null);
   const [userNameOcr, setUserNameOcr] = useState<UserNameOcrOutput | null>(null);
   const [characterNameOcr, setCharacterNameOcr] = useState<CharacterNameOcrItem[]>([]);
+  const [damageOcr, setDamageOcr] = useState<DamageOcrItem[]>([]);
   const [groundTruthLabels, setGroundTruthLabels] = useState<Record<string, string>>({});
   const [isRecognizingRole, setIsRecognizingRole] = useState(false);
   const [isRecognizingResult, setIsRecognizingResult] = useState(false);
   const [isRecognizingUserName, setIsRecognizingUserName] = useState(false);
   const [isRecognizingCharacterName, setIsRecognizingCharacterName] = useState(false);
+  const [isRecognizingDamage, setIsRecognizingDamage] = useState(false);
 
   const csv = useMemo(() => {
     if (files.length === 0 || error) {
@@ -107,6 +111,7 @@ export default function App() {
       setResultOcr(null);
       setUserNameOcr(null);
       setCharacterNameOcr([]);
+      setDamageOcr([]);
       setGroundTruthLabels({});
 
       if (nextFiles[0]) {
@@ -120,6 +125,7 @@ export default function App() {
       setResultOcr(null);
       setUserNameOcr(null);
       setCharacterNameOcr([]);
+      setDamageOcr([]);
       setGroundTruthLabels({});
       setError(caught instanceof Error ? caught.message : "Invalid file.");
     } finally {
@@ -268,6 +274,39 @@ export default function App() {
                   }}
                 >
                   {isRecognizingRole ? "実行中" : "攻撃/防衛判定"}
+                </button>
+                <button
+                  type="button"
+                  disabled={isRecognizingDamage}
+                  onClick={async () => {
+                    const damageImages = previews
+                      .filter((preview) => /^(left|right)Char[1-6]Damage$/.test(preview.name))
+                      .map((preview) => ({
+                        fieldName: preview.name,
+                        image: preview.dataUrl,
+                      }));
+                    const sourceFileName = files[0]?.name ?? "unknown";
+
+                    if (damageImages.length !== 12) {
+                      setError(`${sourceFileName}: ダメージ領域が 12 個そろっていません。`);
+                      return;
+                    }
+
+                    try {
+                      setError(null);
+                      setIsRecognizingDamage(true);
+                      setDamageOcr(await recognizeDamageValues(damageImages));
+                    } catch (caught) {
+                      setDamageOcr([]);
+                      const message = caught instanceof Error ? caught.message : "OCR failed.";
+
+                      setError(`${sourceFileName}: ダメージ OCR に失敗しました。 ${message}`);
+                    } finally {
+                      setIsRecognizingDamage(false);
+                    }
+                  }}
+                >
+                  {isRecognizingDamage ? "実行中" : "ダメージ OCR"}
                 </button>
                 <button
                   type="button"
@@ -485,6 +524,20 @@ export default function App() {
                   ))}
                 </div>
               </>
+            )}
+            {damageOcr.length > 0 && (
+              <div className="ocr-result-grid character-result-grid">
+                {damageOcr.map((item) => (
+                  <div className="ocr-result-item" key={item.fieldName}>
+                    <span>{item.fieldName}</span>
+                    <div className="ocr-preprocessed-frame">
+                      <img alt="" src={item.preprocessedImage} />
+                    </div>
+                    <strong>{item.damage?.toLocaleString() ?? "unknown"}</strong>
+                    <code>{item.text || "(empty)"}</code>
+                  </div>
+                ))}
+              </div>
             )}
           </section>
         )}

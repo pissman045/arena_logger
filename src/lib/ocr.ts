@@ -23,6 +23,13 @@ export type CharacterNameOcrItem = {
   preprocessedImage: string;
 };
 
+export type DamageOcrItem = {
+  fieldName: string;
+  text: string;
+  damage: number | null;
+  preprocessedImage: string;
+};
+
 type BattleResult = "win" | "lose";
 
 const characterNameOcrScale = 1;
@@ -40,6 +47,11 @@ const characterNameAllowedPattern = new RegExp(
   `[^${escapeCharacterClass(characterNameWhitelist)}]`,
   "gu",
 );
+const damageBrightThreshold = 160;
+const damageCropPadding = 6;
+const damageScale = 3;
+const damageWhiteMinChannel = 235;
+const damageWhiteMaxSpread = 20;
 const characterNameWorkerLanguage = "bluearchive_jpn";
 const localTessdataWorkerOptions: Partial<Tesseract.WorkerOptions> = {
   langPath: "/tessdata",
@@ -189,6 +201,39 @@ export async function recognizeCharacterNames(
   }
 }
 
+export async function recognizeDamageValues(
+  damageImages: Array<{ fieldName: string; image: string }>,
+): Promise<DamageOcrItem[]> {
+  const worker = await createWorker("eng", OEM.LSTM_ONLY);
+
+  try {
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.SINGLE_WORD,
+      tessedit_char_whitelist: "0123456789,Oo",
+      user_defined_dpi: "200",
+    });
+
+    const items: DamageOcrItem[] = [];
+
+    for (const { fieldName, image } of damageImages) {
+      const preprocessedImage = await preprocessDamageImage(image);
+      const text = await recognizeText(worker, preprocessedImage);
+      const damage = normalizeDamageValue(text);
+
+      items.push({
+        fieldName,
+        text,
+        damage,
+        preprocessedImage,
+      });
+    }
+
+    return items;
+  } finally {
+    await worker.terminate();
+  }
+}
+
 export function normalizeCharacterName(text: string): string {
   return text
     .trim()
@@ -259,6 +304,21 @@ function calculateLevenshteinDistance(left: string, right: string): number {
   return previous[rightCharacters.length] ?? 0;
 }
 
+export function normalizeDamageValue(text: string): number | null {
+  const normalized = text
+    .trim()
+    .replace(/[Oo]/g, "0")
+    .replace(/[^\d]/g, "");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(normalized, 10);
+
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export async function preprocessCharacterNameImage(dataUrl: string): Promise<string> {
   const image = await loadImage(dataUrl);
   const canvas = document.createElement("canvas");
@@ -281,6 +341,43 @@ export async function preprocessCharacterNameImage(dataUrl: string): Promise<str
       : croppedCanvas;
 
   return preprocessedCanvas.toDataURL("image/png");
+}
+
+export async function preprocessDamageImage(dataUrl: string): Promise<string> {
+  const image = await loadImage(dataUrl);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Canvas 2D context is not available.");
+  }
+
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  context.drawImage(image, 0, 0);
+
+  const sourceImageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const binaryImageData = removeBorderConnectedWhitePixels(
+    createDamageBinaryImageData(sourceImageData),
+  );
+
+  context.putImageData(binaryImageData, 0, 0);
+
+  const textBounds = findBrightPixelBounds(binaryImageData, damageBrightThreshold);
+  const croppedCanvas = cropCanvasToBounds(canvas, textBounds, damageCropPadding);
+  const scaledCanvas = document.createElement("canvas");
+  const scaledContext = scaledCanvas.getContext("2d");
+
+  if (!scaledContext) {
+    throw new Error("Canvas 2D context is not available.");
+  }
+
+  scaledCanvas.width = croppedCanvas.width * damageScale;
+  scaledCanvas.height = croppedCanvas.height * damageScale;
+  scaledContext.imageSmoothingEnabled = false;
+  scaledContext.drawImage(croppedCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+
+  return scaledCanvas.toDataURL("image/png");
 }
 
 function joinTwoLineCharacterNameCanvas(sourceCanvas: HTMLCanvasElement): HTMLCanvasElement {
@@ -432,6 +529,143 @@ function findDarkPixelBounds(imageData: ImageData, threshold: number): PixelBoun
   };
 }
 
+function findBrightPixelBounds(imageData: ImageData, threshold: number): PixelBounds | null {
+  const { data, width, height } = imageData;
+  let left = width;
+  let top = height;
+  let right = -1;
+  let bottom = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const red = data[index] ?? 0;
+      const green = data[index + 1] ?? 0;
+      const blue = data[index + 2] ?? 0;
+      const alpha = data[index + 3] ?? 255;
+      const luminance = 0.299 * red + 0.587 * green + 0.114 * blue;
+      const brightestChannel = Math.max(red, green, blue);
+
+      if (alpha < 32 || (luminance <= threshold && brightestChannel <= threshold + 20)) {
+        continue;
+      }
+
+      left = Math.min(left, x);
+      top = Math.min(top, y);
+      right = Math.max(right, x);
+      bottom = Math.max(bottom, y);
+    }
+  }
+
+  if (right < left || bottom < top) {
+    return null;
+  }
+
+  return {
+    left,
+    top,
+    right,
+    bottom,
+  };
+}
+
+function createDamageBinaryImageData(source: ImageData): ImageData {
+  const binary = new ImageData(source.width, source.height);
+
+  for (let index = 0; index < source.data.length; index += 4) {
+    const red = source.data[index] ?? 255;
+    const green = source.data[index + 1] ?? 255;
+    const blue = source.data[index + 2] ?? 255;
+    const alpha = source.data[index + 3] ?? 255;
+    const brightestChannel = Math.max(red, green, blue);
+    const darkestChannel = Math.min(red, green, blue);
+    const channelSpread = brightestChannel - darkestChannel;
+    const whiteDistance =
+      (255 - red) * (255 - red) +
+      (255 - green) * (255 - green) +
+      (255 - blue) * (255 - blue);
+    const value =
+      alpha >= 32 &&
+      darkestChannel >= damageWhiteMinChannel &&
+      channelSpread <= damageWhiteMaxSpread &&
+      whiteDistance <= 1600
+        ? 255
+        : 0;
+
+    binary.data[index] = value;
+    binary.data[index + 1] = value;
+    binary.data[index + 2] = value;
+    binary.data[index + 3] = 255;
+  }
+
+  return binary;
+}
+
+function removeBorderConnectedWhitePixels(source: ImageData): ImageData {
+  const cleaned = new ImageData(new Uint8ClampedArray(source.data), source.width, source.height);
+  const queue: Array<{ x: number; y: number }> = [];
+  const seen = new Uint8Array(source.width * source.height);
+
+  const enqueueIfWhite = (x: number, y: number): void => {
+    if (x < 0 || x >= cleaned.width || y < 0 || y >= cleaned.height) {
+      return;
+    }
+
+    const offset = y * cleaned.width + x;
+
+    if (seen[offset]) {
+      return;
+    }
+
+    seen[offset] = 1;
+
+    if (!binaryPixelIsWhite(cleaned, x, y)) {
+      return;
+    }
+
+    queue.push({ x, y });
+  };
+
+  for (let x = 0; x < cleaned.width; x += 1) {
+    enqueueIfWhite(x, 0);
+    enqueueIfWhite(x, cleaned.height - 1);
+  }
+
+  for (let y = 1; y < cleaned.height - 1; y += 1) {
+    enqueueIfWhite(0, y);
+    enqueueIfWhite(cleaned.width - 1, y);
+  }
+
+  while (queue.length > 0) {
+    const point = queue.shift();
+
+    if (!point) {
+      continue;
+    }
+
+    setBinaryPixel(cleaned, point.x, point.y, 0);
+    enqueueIfWhite(point.x - 1, point.y);
+    enqueueIfWhite(point.x + 1, point.y);
+    enqueueIfWhite(point.x, point.y - 1);
+    enqueueIfWhite(point.x, point.y + 1);
+  }
+
+  return cleaned;
+}
+
+function binaryPixelIsWhite(imageData: ImageData, x: number, y: number): boolean {
+  const index = (y * imageData.width + x) * 4;
+  return (imageData.data[index] ?? 0) >= 250;
+}
+
+function setBinaryPixel(imageData: ImageData, x: number, y: number, value: number): void {
+  const index = (y * imageData.width + x) * 4;
+  imageData.data[index] = value;
+  imageData.data[index + 1] = value;
+  imageData.data[index + 2] = value;
+  imageData.data[index + 3] = 255;
+}
+
 async function loadImage(src: string): Promise<HTMLImageElement> {
   const image = new Image();
 
@@ -444,6 +678,10 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 
 function escapeCharacterClass(value: string): string {
   return value.replace(/[\\\]^~-]/g, "\\$&");
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function invertBattleResult(result: BattleResult): BattleResult {

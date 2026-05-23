@@ -4,6 +4,7 @@ import {
   inferBattleResults,
   normalizeBattleResult,
   normalizeCharacterName,
+  normalizeDamageValue,
   normalizeUserName,
 } from "../../src/lib/ocr";
 
@@ -77,6 +78,26 @@ describe("normalizeCharacterName", () => {
 
   it("keeps only supported character-name characters", () => {
     expect(normalizeCharacterName("アルA!?（正月）")).toBe("アル（正月）");
+  });
+});
+
+describe("normalizeDamageValue", () => {
+  it("parses plain numbers", () => {
+    expect(normalizeDamageValue("842162")).toBe(842162);
+  });
+
+  it("removes commas and symbols", () => {
+    expect(normalizeDamageValue("499,832!")).toBe(499832);
+  });
+
+  it("treats O as 0", () => {
+    expect(normalizeDamageValue("O")).toBe(0);
+    expect(normalizeDamageValue("3O5")).toBe(305);
+  });
+
+  it("returns null when no digits remain", () => {
+    expect(normalizeDamageValue("")).toBeNull();
+    expect(normalizeDamageValue("abc")).toBeNull();
   });
 });
 
