@@ -25,6 +25,12 @@ describe("toPixelRect", () => {
       width: 235,
       height: 770,
     });
+    expect(toPixelRect(extractionRegions.leftChar1Name, sampleImageSize)).toEqual({
+      x: 270,
+      y: 2100,
+      width: 235,
+      height: 100,
+    });
     expect(toPixelRect(extractionRegions.rightResult, sampleImageSize)).toEqual({
       x: 2240,
       y: 900,

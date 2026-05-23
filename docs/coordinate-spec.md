@@ -45,13 +45,13 @@ type RelativeRect = {
 
 ### leftChar1Name
 
-- px: `x=275, y=2100, width=235, height=100`
-- relative: `x=0.071615, y=0.729420, width=0.061198, height=0.034734`
+- px: `x=270, y=2100, width=235, height=100`
+- relative: `x=0.070313, y=0.729420, width=0.061198, height=0.034734`
 
 ### leftChar1Damage
 
-- px: `x=275, y=1170, width=235, height=770`
-- relative: `x=0.071615, y=0.406391, width=0.061198, height=0.267454`
+- px: `x=270, y=1170, width=235, height=770`
+- relative: `x=0.070313, y=0.406391, width=0.061198, height=0.267454`
 
 ### leftChar2Name
 
