@@ -38,6 +38,7 @@ textarea {
 .workspace-header {
   align-items: center;
   display: flex;
+  gap: 16px;
   justify-content: space-between;
 }
 
@@ -55,6 +56,29 @@ h1 {
 .workspace-header p {
   color: #526071;
   margin-top: 6px;
+}
+
+.mode-switch {
+  background: #ffffff;
+  border: 1px solid #dce2ea;
+  border-radius: 8px;
+  display: flex;
+  padding: 3px;
+}
+
+.mode-switch button {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #526071;
+  cursor: pointer;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.mode-switch button.is-active {
+  background: #243447;
+  color: #ffffff;
 }
 
 .drop-zone {
@@ -111,6 +135,10 @@ h1 {
   border-top: 1px solid #edf0f4;
 }
 
+.file-row.is-current {
+  background: #eef9f6;
+}
+
 .file-row span:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -130,6 +158,7 @@ h1 {
 }
 
 .csv-panel,
+.queue-panel,
 .ocr-panel {
   display: grid;
   gap: 10px;
@@ -171,6 +200,153 @@ h1 {
   cursor: not-allowed;
 }
 
+.compact-file-list .file-row {
+  min-height: 38px;
+}
+
+.status-panel {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dce2ea;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+.status-panel strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-panel span {
+  color: #526071;
+  flex: 0 0 auto;
+}
+
+.review-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.review-layout {
+  align-items: start;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.15fr);
+}
+
+.current-image-preview {
+  align-items: center;
+  background: #111827;
+  border: 0;
+  border-radius: 8px;
+  cursor: zoom-in;
+  display: flex;
+  justify-content: center;
+  max-height: 620px;
+  min-height: 320px;
+  overflow: hidden;
+  padding: 0;
+  width: 100%;
+}
+
+.current-image-preview:disabled {
+  cursor: default;
+}
+
+.current-image-preview img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.current-image-preview span {
+  color: #cbd4df;
+}
+
+.field-label input:disabled {
+  background: #edf0f4;
+  color: #7a8796;
+  cursor: not-allowed;
+}
+
+.image-modal {
+  align-items: center;
+  background: rgb(17 24 39 / 88%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 20;
+}
+
+.image-modal img {
+  max-height: calc(100vh - 48px);
+  max-width: calc(100vw - 48px);
+  object-fit: contain;
+}
+
+.image-modal-close {
+  background: #ffffff;
+  border: 0;
+  border-radius: 6px;
+  color: #243447;
+  cursor: pointer;
+  min-height: 36px;
+  padding: 0 12px;
+  position: fixed;
+  right: 24px;
+  top: 24px;
+}
+
+.side-edit-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.side-editor {
+  background: #ffffff;
+  border: 1px solid #dce2ea;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.side-editor h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.field-label {
+  display: grid;
+  gap: 5px;
+}
+
+.field-label span {
+  color: #526071;
+  font-size: 13px;
+}
+
+.field-label input {
+  border: 1px solid #cbd4df;
+  border-radius: 6px;
+  min-height: 36px;
+  padding: 0 9px;
+  width: 100%;
+}
+
+.character-edit-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+}
+
 .button-group {
   display: flex;
   flex-wrap: wrap;
@@ -180,6 +356,7 @@ h1 {
 
 .panel-actions {
   display: flex;
+  gap: 8px;
   justify-content: flex-end;
 }
 
@@ -196,6 +373,10 @@ h1 {
 .panel-actions button:disabled {
   background: #aeb7c2;
   cursor: not-allowed;
+}
+
+.csv-actions {
+  justify-content: flex-end;
 }
 
 .ocr-result-grid {
@@ -321,5 +502,25 @@ textarea {
 @media (max-width: 720px) {
   .app-shell {
     padding: 20px;
+  }
+
+  .workspace-header,
+  .status-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mode-switch {
+    align-self: flex-start;
+  }
+
+  .review-layout,
+  .side-edit-grid,
+  .character-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .current-image-preview {
+    max-height: 420px;
   }
 }
