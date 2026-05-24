@@ -14,7 +14,7 @@ export default function App() {
         <header className="workspace-header">
           <div>
             <h1>Arena Logger</h1>
-            <p>スクリーンショットから TSV を生成するための作業台です。</p>
+            <p>ブルーアーカイブPC版の戦術対抗戦のスクリーンショットからデータを抽出するためのツールです。</p>
           </div>
           <div className="mode-switch" aria-label="表示モード">
             <button
