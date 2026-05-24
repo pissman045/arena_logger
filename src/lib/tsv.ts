@@ -8,13 +8,22 @@ export const tsvHeader = [
   ...createSideHeader("defender"),
 ];
 
-export function createTsv(records: BattleRecord[]): string {
-  return [
-    tsvHeader.join("\t"),
+type CreateTsvOptions = {
+  includeHeader?: boolean;
+};
+
+export function createTsv(records: BattleRecord[], options: CreateTsvOptions = {}): string {
+  const rows = [
     ...[...records]
       .sort((a, b) => a.battleTime.localeCompare(b.battleTime))
       .map((record) => createTsvRow(record).map(escapeTsvValue).join("\t")),
-  ].join("\n");
+  ];
+
+  if (options.includeHeader) {
+    rows.unshift(tsvHeader.join("\t"));
+  }
+
+  return rows.join("\n");
 }
 
 function createTsvRow(record: BattleRecord): string[] {

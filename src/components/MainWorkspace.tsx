@@ -11,6 +11,8 @@ import { createTsv } from "../lib/tsv";
 import type { BattleRecord } from "../types/battle";
 import { FileDropZone } from "./FileDropZone";
 
+const includeTsvHeaderStorageKey = "arenaLogger.includeTsvHeader";
+
 type MainWorkspaceProps = {
   error: string | null;
   setError: (message: string | null) => void;
@@ -24,6 +26,9 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
   const [isRecognizingCurrentFile, setIsRecognizingCurrentFile] = useState(false);
   const [currentPreviewUrl, setCurrentPreviewUrl] = useState<string | null>(null);
   const [expandedPreviewUrl, setExpandedPreviewUrl] = useState<string | null>(null);
+  const [includeTsvHeader, setIncludeTsvHeader] = useState(() => {
+    return localStorage.getItem(includeTsvHeaderStorageKey) === "true";
+  });
 
   const tsv = useMemo(() => {
     if (records.length === 0) {
@@ -31,11 +36,11 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
     }
 
     try {
-      return createTsv(records);
+      return createTsv(records, { includeHeader: includeTsvHeader });
     } catch (caught) {
       return caught instanceof Error ? caught.message : "TSV generation failed.";
     }
-  }, [records]);
+  }, [includeTsvHeader, records]);
 
   const currentFile = queuedFiles[currentFileIndex] ?? null;
   const isMainComplete = queuedFiles.length > 0 && currentFileIndex >= queuedFiles.length;
@@ -74,6 +79,10 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [expandedPreviewUrl]);
+
+  useEffect(() => {
+    localStorage.setItem(includeTsvHeaderStorageKey, includeTsvHeader ? "true" : "false");
+  }, [includeTsvHeader]);
 
   async function processQueuedFile(nextFiles: File[], fileIndex: number): Promise<void> {
     const file = nextFiles[fileIndex];
@@ -295,6 +304,14 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
         <div className="panel-heading">
           <h2>TSV</h2>
         </div>
+        <label className="checkbox-label">
+          <input
+            checked={includeTsvHeader}
+            type="checkbox"
+            onChange={(event) => setIncludeTsvHeader(event.currentTarget.checked)}
+          />
+          <span>ヘッダーを付与</span>
+        </label>
         <textarea readOnly value={tsv} placeholder="確認した結果がここに追加されます。" />
         <div className="panel-actions tsv-actions">
           <button type="button" disabled={!tsv} onClick={() => navigator.clipboard.writeText(tsv)}>

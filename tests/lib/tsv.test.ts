@@ -28,8 +28,37 @@ describe("createTsv", () => {
 
     const rows = createTsv([record]).split("\n");
 
-    expect(rows[1].startsWith("20260318192912\twin\tattacker\ta1\t10")).toBe(true);
-    expect(rows[1]).toContain("\tlose\tdefender\td1\t1");
+    expect(rows[0].startsWith("20260318192912\twin\tattacker\ta1\t10")).toBe(true);
+    expect(rows[0]).toContain("\tlose\tdefender\td1\t1");
+  });
+
+  it("adds a header row when requested", () => {
+    const record: BattleRecord = {
+      battleTime: "20260318192912",
+      left: {
+        role: "attack",
+        result: "win",
+        userName: "attacker",
+        characters: Array.from({ length: 6 }, () => ({
+          characterName: "a",
+          damage: 1,
+        })),
+      },
+      right: {
+        role: "defense",
+        result: "lose",
+        userName: "defender",
+        characters: Array.from({ length: 6 }, () => ({
+          characterName: "d",
+          damage: 2,
+        })),
+      },
+    };
+
+    const rows = createTsv([record], { includeHeader: true }).split("\n");
+
+    expect(rows[0].startsWith("battle_time\tattacker_result")).toBe(true);
+    expect(rows[1].startsWith("20260318192912\twin\tattacker")).toBe(true);
   });
 
   it("replaces tabs and line breaks in field values", () => {

@@ -273,6 +273,19 @@ h1 {
   cursor: not-allowed;
 }
 
+.checkbox-label {
+  align-items: center;
+  color: #526071;
+  display: flex;
+  gap: 8px;
+  justify-self: start;
+}
+
+.checkbox-label input {
+  height: 16px;
+  width: 16px;
+}
+
 .image-modal {
   align-items: center;
   background: rgb(17 24 39 / 88%);
