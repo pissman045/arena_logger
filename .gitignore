@@ -5,3 +5,4 @@ coverage
 *.local
 samples/
 data/
+public/tessdata/jpn.traineddata
