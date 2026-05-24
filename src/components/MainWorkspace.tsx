@@ -26,6 +26,7 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
   const [isRecognizingCurrentFile, setIsRecognizingCurrentFile] = useState(false);
   const [currentPreviewUrl, setCurrentPreviewUrl] = useState<string | null>(null);
   const [expandedPreviewUrl, setExpandedPreviewUrl] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
   const [includeTsvHeader, setIncludeTsvHeader] = useState(() => {
     return localStorage.getItem(includeTsvHeaderStorageKey) === "true";
   });
@@ -83,6 +84,16 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
   useEffect(() => {
     localStorage.setItem(includeTsvHeaderStorageKey, includeTsvHeader ? "true" : "false");
   }, [includeTsvHeader]);
+
+  useEffect(() => {
+    if (!copyStatus) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setCopyStatus(null), 2000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [copyStatus]);
 
   async function processQueuedFile(nextFiles: File[], fileIndex: number): Promise<void> {
     const file = nextFiles[fileIndex];
@@ -314,7 +325,19 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
         </label>
         <textarea readOnly value={tsv} placeholder="確認した結果がここに追加されます。" />
         <div className="panel-actions tsv-actions">
-          <button type="button" disabled={!tsv} onClick={() => navigator.clipboard.writeText(tsv)}>
+          {copyStatus && <span className="copy-toast">{copyStatus}</span>}
+          <button
+            type="button"
+            disabled={!tsv}
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(tsv);
+                setCopyStatus("コピーしました");
+              } catch {
+                setCopyStatus("コピーに失敗しました");
+              }
+            }}
+          >
             コピー
           </button>
           <button type="button" disabled={!tsv} onClick={() => setRecords([])}>

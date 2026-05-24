@@ -389,7 +389,16 @@ h1 {
 }
 
 .tsv-actions {
+  align-items: center;
   justify-content: flex-end;
+}
+
+.copy-toast {
+  background: #23313d;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  padding: 6px 10px;
 }
 
 .ocr-result-grid {
