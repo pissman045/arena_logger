@@ -255,40 +255,42 @@ TSV は、後続の絞り込み、集計、比較をしやすくするため、1
 
 ### 先頭の共通列
 
-- `battle_time`
+- `created_at`
+- `attacker_win`
 
-### 攻撃側の列
+### ユーザー名の列
 
-- `attacker_result`
 - `attacker_user_name`
-- `attacker_char_1_name`
-- `attacker_char_1_damage`
-- `attacker_char_2_name`
-- `attacker_char_2_damage`
-- `attacker_char_3_name`
-- `attacker_char_3_damage`
-- `attacker_char_4_name`
-- `attacker_char_4_damage`
-- `attacker_char_5_name`
-- `attacker_char_5_damage`
-- `attacker_char_6_name`
-- `attacker_char_6_damage`
-
-### 防衛側の列
-
-- `defender_result`
 - `defender_user_name`
-- `defender_char_1_name`
+
+### キャラ名の列
+
+- `attacker_char_1`
+- `attacker_char_2`
+- `attacker_char_3`
+- `attacker_char_4`
+- `attacker_char_5`
+- `attacker_char_6`
+- `defender_char_1`
+- `defender_char_2`
+- `defender_char_3`
+- `defender_char_4`
+- `defender_char_5`
+- `defender_char_6`
+
+### ダメージの列
+
+- `attacker_char_1_damage`
+- `attacker_char_2_damage`
+- `attacker_char_3_damage`
+- `attacker_char_4_damage`
+- `attacker_char_5_damage`
+- `attacker_char_6_damage`
 - `defender_char_1_damage`
-- `defender_char_2_name`
 - `defender_char_2_damage`
-- `defender_char_3_name`
 - `defender_char_3_damage`
-- `defender_char_4_name`
 - `defender_char_4_damage`
-- `defender_char_5_name`
 - `defender_char_5_damage`
-- `defender_char_6_name`
 - `defender_char_6_damage`
 
 ### TSV 出力形式の補足
@@ -303,8 +305,8 @@ TSV は、後続の絞り込み、集計、比較をしやすくするため、1
 ## TSV サンプルイメージ
 
 ```tsv
-battle_time	attacker_result	attacker_user_name	attacker_char_1_name	attacker_char_1_damage	attacker_char_2_name	attacker_char_2_damage	attacker_char_3_name	attacker_char_3_damage	attacker_char_4_name	attacker_char_4_damage	attacker_char_5_name	attacker_char_5_damage	attacker_char_6_name	attacker_char_6_damage	defender_result	defender_user_name	defender_char_1_name	defender_char_1_damage	defender_char_2_name	defender_char_2_damage	defender_char_3_name	defender_char_3_damage	defender_char_4_name	defender_char_4_damage	defender_char_5_name	defender_char_5_damage	defender_char_6_name	defender_char_6_damage
-20260318192912	win	player_a	char_a	12345	char_b	23456	char_c	34567	char_d	45678	char_e	56789	char_f	67890	lose	player_b	char_g	11111	char_h	22222	char_i	33333	char_j	44444	char_k	55555	char_l	66666
+created_at	attacker_win	attacker_user_name	defender_user_name	attacker_char_1	attacker_char_2	attacker_char_3	attacker_char_4	attacker_char_5	attacker_char_6	defender_char_1	defender_char_2	defender_char_3	defender_char_4	defender_char_5	defender_char_6	attacker_char_1_damage	attacker_char_2_damage	attacker_char_3_damage	attacker_char_4_damage	attacker_char_5_damage	attacker_char_6_damage	defender_char_1_damage	defender_char_2_damage	defender_char_3_damage	defender_char_4_damage	defender_char_5_damage	defender_char_6_damage
+2026-03-18 19-29-12	true	player_a	player_b	char_a	char_b	char_c	char_d	char_e	char_f	char_g	char_h	char_i	char_j	char_k	char_l	12345	23456	34567	45678	56789	67890	11111	22222	33333	44444	55555	66666
 ```
 
 ## エラー時の扱い

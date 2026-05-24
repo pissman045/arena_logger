@@ -1,11 +1,14 @@
-import type { BattleRecord, BattleSide } from "../types/battle";
-
-const sideColumns = ["result", "user_name"] as const;
+import type { BattleRecord, BattleResult, BattleSide } from "../types/battle";
 
 export const tsvHeader = [
-  "battle_time",
-  ...createSideHeader("attacker"),
-  ...createSideHeader("defender"),
+  "created_at",
+  "attacker_win",
+  "attacker_user_name",
+  "defender_user_name",
+  ...createCharacterHeaders("attacker"),
+  ...createCharacterHeaders("defender"),
+  ...createDamageHeaders("attacker"),
+  ...createDamageHeaders("defender"),
 ];
 
 type CreateTsvOptions = {
@@ -31,20 +34,35 @@ function createTsvRow(record: BattleRecord): string[] {
   const defender = getSideByRole(record, "defense");
 
   return [
-    record.battleTime,
-    ...serializeSide(attacker),
-    ...serializeSide(defender),
+    formatCreatedAt(record.battleTime),
+    serializeAttackerWin(attacker.result),
+    attacker.userName,
+    defender.userName,
+    ...attacker.characters.map((character) => character.characterName),
+    ...defender.characters.map((character) => character.characterName),
+    ...attacker.characters.map((character) => character.damage?.toString() ?? ""),
+    ...defender.characters.map((character) => character.damage?.toString() ?? ""),
   ];
 }
 
-function createSideHeader(prefix: "attacker" | "defender"): string[] {
-  return [
-    ...sideColumns.map((column) => `${prefix}_${column}`),
-    ...Array.from({ length: 6 }, (_, index) => [
-      `${prefix}_char_${index + 1}_name`,
-      `${prefix}_char_${index + 1}_damage`,
-    ]).flat(),
-  ];
+function formatCreatedAt(battleTime: string): string {
+  const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(battleTime);
+
+  if (!match) {
+    return battleTime;
+  }
+
+  const [, year, month, day, hour, minute, second] = match;
+
+  return `${year}-${month}-${day} ${hour}-${minute}-${second}`;
+}
+
+function createCharacterHeaders(prefix: "attacker" | "defender"): string[] {
+  return Array.from({ length: 6 }, (_, index) => `${prefix}_char_${index + 1}`);
+}
+
+function createDamageHeaders(prefix: "attacker" | "defender"): string[] {
+  return Array.from({ length: 6 }, (_, index) => `${prefix}_char_${index + 1}_damage`);
 }
 
 function getSideByRole(record: BattleRecord, role: "attack" | "defense"): BattleSide {
@@ -59,15 +77,16 @@ function getSideByRole(record: BattleRecord, role: "attack" | "defense"): Battle
   throw new Error(`Battle side was not found for role: ${role}`);
 }
 
-function serializeSide(side: BattleSide): string[] {
-  return [
-    side.result ?? "",
-    side.userName,
-    ...side.characters.flatMap((character) => [
-      character.characterName,
-      character.damage?.toString() ?? "",
-    ]),
-  ];
+function serializeAttackerWin(result: BattleResult | null): string {
+  if (result === "win") {
+    return "true";
+  }
+
+  if (result === "lose") {
+    return "false";
+  }
+
+  return "";
 }
 
 function escapeTsvValue(value: string): string {
