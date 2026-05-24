@@ -214,13 +214,6 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
         </section>
       )}
 
-      {isRecognizingCurrentFile && currentFile && (
-        <section className="status-panel" aria-live="polite">
-          <strong>{currentFile.name}</strong>
-          <span>OCR 実行中</span>
-        </section>
-      )}
-
       <section className="review-panel" aria-label="OCR 結果確認">
         <div className="panel-heading">
           <h2>{reviewTitle}</h2>
