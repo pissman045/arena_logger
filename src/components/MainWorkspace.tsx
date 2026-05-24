@@ -340,7 +340,15 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
           >
             コピー
           </button>
-          <button type="button" disabled={!tsv} onClick={() => setRecords([])}>
+          <button
+            type="button"
+            disabled={!tsv}
+            onClick={() => {
+              if (window.confirm("TSVに追加した内容をクリアしますか？")) {
+                setRecords([]);
+              }
+            }}
+          >
             クリア
           </button>
         </div>
