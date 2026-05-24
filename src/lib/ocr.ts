@@ -54,7 +54,7 @@ const damageWhiteMinChannel = 235;
 const damageWhiteMaxSpread = 20;
 const characterNameWorkerLanguage = "bluearchive_jpn";
 const localTessdataWorkerOptions: Partial<Tesseract.WorkerOptions> = {
-  langPath: "/tessdata",
+  langPath: `${import.meta.env.BASE_URL}tessdata`,
   gzip: false,
 };
 
