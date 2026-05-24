@@ -3,7 +3,7 @@
 ## 対象画像
 
 - image_width: `3840`
-- image_height: `2879`
+- image_height: `2880`
 
 ## 形式
 

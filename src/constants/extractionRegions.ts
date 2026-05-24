@@ -2,7 +2,7 @@ import type { RelativeRect } from "../types/battle";
 
 export const sampleImageSize = {
   width: 3840,
-  height: 2879,
+  height: 2880,
 } as const;
 
 export const extractionRegions = {
