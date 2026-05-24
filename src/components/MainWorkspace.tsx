@@ -6,7 +6,7 @@ import {
   reviewHasRequiredValues,
   type CurrentReview,
 } from "../lib/battleRecord";
-import { parseBattleTime } from "../lib/battleTime";
+import { parseCreatedAt } from "../lib/createdAt";
 import { createTsv } from "../lib/tsv";
 import type { BattleRecord } from "../types/battle";
 import { FileDropZone } from "./FileDropZone";
@@ -108,7 +108,7 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
 
   async function handleSelectedFiles(nextFiles: File[]): Promise<void> {
     try {
-      nextFiles.forEach((file) => parseBattleTime(file.name));
+      nextFiles.forEach((file) => parseCreatedAt(file.name));
       setQueuedFiles(nextFiles);
       setCurrentFileIndex(0);
       setCurrentReview(null);

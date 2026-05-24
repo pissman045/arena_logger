@@ -15,7 +15,7 @@ export type BattleSide = {
 };
 
 export type BattleRecord = {
-  battleTime: string;
+  createdAt: string;
   left: BattleSide;
   right: BattleSide;
 };

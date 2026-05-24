@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { characterNames } from "../constants/characterNames";
-import { parseBattleTime } from "../lib/battleTime";
+import { parseCreatedAt } from "../lib/createdAt";
 import { createCharacterNameGroundTruthFiles } from "../lib/groundTruth";
 import { downloadGroundTruthArchive } from "../lib/groundTruthArchive";
 import { createRegionPreviews, type RegionPreview } from "../lib/imageRegions";
@@ -40,7 +40,7 @@ export function DebugWorkspace({ error, setError }: DebugWorkspaceProps) {
 
   async function handleSelectedFiles(nextFiles: File[]): Promise<void> {
     try {
-      nextFiles.forEach((file) => parseBattleTime(file.name));
+      nextFiles.forEach((file) => parseCreatedAt(file.name));
       setDebugFiles(nextFiles);
       setError(null);
       setPreviews([]);

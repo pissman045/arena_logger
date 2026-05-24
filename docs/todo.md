@@ -36,7 +36,7 @@ DevContainer は使わず、ローカル環境で開発する前提の TODO。
   - `ExtractionError`
 - [x] 座標定義をコード化する
   - `docs/coordinate-spec.md` の relative 値を利用する
-- [x] ファイル名から `battle_time` を抽出する関数を実装する
+- [x] ファイル名から `created_at` を抽出する関数を実装する
 - [x] TSV ヘッダー定義をコード化する
 - [x] TSV 生成関数を実装する
 
@@ -106,7 +106,7 @@ DevContainer は使わず、ローカル環境で開発する前提の TODO。
 - [ ] 複数画像を順番に処理する
 - [ ] ブラウザ負荷を見ながら並列数を決める
 - [ ] 途中失敗時は処理を中断する
-- [ ] 成功した `BattleRecord` を `battle_time` 順に並べる
+- [ ] 成功した `BattleRecord` を `created_at` 順に並べる
 - [ ] TSV 文字列を生成して画面に表示する
 
 ## 8. TSV 表示 UI
@@ -119,7 +119,7 @@ DevContainer は使わず、ローカル環境で開発する前提の TODO。
 
 ## 9. テスト
 
-- [x] `battle_time` 抽出の単体テストを書く
+- [x] `created_at` 抽出の単体テストを書く
 - [x] `RelativeRect` 変換の単体テストを書く
 - [x] TSV 生成の単体テストを書く
 - [x] OCR 正規化処理の単体テストを書く
@@ -129,7 +129,7 @@ DevContainer は使わず、ローカル環境で開発する前提の TODO。
 ## 10. 最初の実装順
 
 1. Vite + React + TypeScript を作成する
-2. 型定義、座標定義、`battle_time` 抽出、TSV 生成を実装する
+2. 型定義、座標定義、`created_at` 抽出、TSV 生成を実装する
 3. 画像アップロード UI を作る
 4. Canvas で座標切り出しを実装する
 5. OCR を 1 項目だけつないで精度を見る

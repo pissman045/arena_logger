@@ -18,7 +18,7 @@ type CreateTsvOptions = {
 export function createTsv(records: BattleRecord[], options: CreateTsvOptions = {}): string {
   const rows = [
     ...[...records]
-      .sort((a, b) => a.battleTime.localeCompare(b.battleTime))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
       .map((record) => createTsvRow(record).map(escapeTsvValue).join("\t")),
   ];
 
@@ -34,7 +34,7 @@ function createTsvRow(record: BattleRecord): string[] {
   const defender = getSideByRole(record, "defense");
 
   return [
-    formatCreatedAt(record.battleTime),
+    formatCreatedAt(record.createdAt),
     serializeAttackerWin(attacker.result),
     attacker.userName,
     defender.userName,
@@ -45,11 +45,11 @@ function createTsvRow(record: BattleRecord): string[] {
   ];
 }
 
-function formatCreatedAt(battleTime: string): string {
-  const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(battleTime);
+function formatCreatedAt(createdAt: string): string {
+  const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(createdAt);
 
   if (!match) {
-    return battleTime;
+    return createdAt;
   }
 
   const [, year, month, day, hour, minute, second] = match;

@@ -19,7 +19,7 @@ type RelativeRect = {
 };
 ```
 
-## battle_time
+## created_at
 
 - source: filename
 - pattern: `BlueArchive YYYY-MM-DD HHMMSS.png`

@@ -1,4 +1,4 @@
-import { parseBattleTime } from "./battleTime";
+import { parseCreatedAt } from "./createdAt";
 import { createRegionPreviews, type RegionPreview } from "./imageRegions";
 import {
   recognizeCharacterNames,
@@ -173,7 +173,7 @@ export async function recognizeBattleRecord(file: File): Promise<CurrentReview> 
     recognizeDamageValues(damageImages),
   ]);
   const record: BattleRecord = {
-    battleTime: parseBattleTime(file.name),
+    createdAt: parseCreatedAt(file.name),
     left: {
       ...createSide(),
       role: role.leftRole,

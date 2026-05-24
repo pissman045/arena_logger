@@ -5,7 +5,7 @@ import type { BattleRecord } from "../../src/types/battle";
 describe("createTsv", () => {
   it("serializes battle records with role-based side ordering", () => {
     const record: BattleRecord = {
-      battleTime: "20260318192912",
+      createdAt: "20260318192912",
       left: {
         role: "defense",
         result: "lose",
@@ -64,7 +64,7 @@ describe("createTsv", () => {
 
   it("adds a header row when requested", () => {
     const record: BattleRecord = {
-      battleTime: "20260318192912",
+      createdAt: "20260318192912",
       left: {
         role: "attack",
         result: "win",
@@ -124,7 +124,7 @@ describe("createTsv", () => {
 
   it("serializes attacker loss as false", () => {
     const record: BattleRecord = {
-      battleTime: "20260318192912",
+      createdAt: "20260318192912",
       left: {
         role: "attack",
         result: "lose",
@@ -150,7 +150,7 @@ describe("createTsv", () => {
 
   it("replaces tabs and line breaks in field values", () => {
     const record: BattleRecord = {
-      battleTime: "20260318192912",
+      createdAt: "20260318192912",
       left: {
         role: "attack",
         result: "win",
