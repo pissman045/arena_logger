@@ -2,22 +2,22 @@ import type { BattleRecord, BattleSide } from "../types/battle";
 
 const sideColumns = ["result", "user_name"] as const;
 
-export const csvHeader = [
+export const tsvHeader = [
   "battle_time",
   ...createSideHeader("attacker"),
   ...createSideHeader("defender"),
 ];
 
-export function createCsv(records: BattleRecord[]): string {
+export function createTsv(records: BattleRecord[]): string {
   return [
-    csvHeader.join(","),
+    tsvHeader.join("\t"),
     ...[...records]
       .sort((a, b) => a.battleTime.localeCompare(b.battleTime))
-      .map((record) => createCsvRow(record).map(escapeCsvValue).join(",")),
+      .map((record) => createTsvRow(record).map(escapeTsvValue).join("\t")),
   ].join("\n");
 }
 
-function createCsvRow(record: BattleRecord): string[] {
+function createTsvRow(record: BattleRecord): string[] {
   const attacker = getSideByRole(record, "attack");
   const defender = getSideByRole(record, "defense");
 
@@ -61,10 +61,6 @@ function serializeSide(side: BattleSide): string[] {
   ];
 }
 
-function escapeCsvValue(value: string): string {
-  if (!/[",\n\r]/.test(value)) {
-    return value;
-  }
-
-  return `"${value.replaceAll('"', '""')}"`;
+function escapeTsvValue(value: string): string {
+  return value.replace(/[\t\r\n]/g, " ");
 }

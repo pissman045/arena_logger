@@ -7,7 +7,7 @@ import {
   type CurrentReview,
 } from "../lib/battleRecord";
 import { parseBattleTime } from "../lib/battleTime";
-import { createCsv } from "../lib/csv";
+import { createTsv } from "../lib/tsv";
 import type { BattleRecord } from "../types/battle";
 import { FileDropZone } from "./FileDropZone";
 
@@ -25,15 +25,15 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
   const [currentPreviewUrl, setCurrentPreviewUrl] = useState<string | null>(null);
   const [expandedPreviewUrl, setExpandedPreviewUrl] = useState<string | null>(null);
 
-  const csv = useMemo(() => {
+  const tsv = useMemo(() => {
     if (records.length === 0) {
       return "";
     }
 
     try {
-      return createCsv(records);
+      return createTsv(records);
     } catch (caught) {
-      return caught instanceof Error ? caught.message : "CSV generation failed.";
+      return caught instanceof Error ? caught.message : "TSV generation failed.";
     }
   }, [records]);
 
@@ -260,7 +260,7 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
         </div>
         <div className="panel-actions">
           <button type="button" disabled={!canConfirmCurrentReview} onClick={confirmCurrentReview}>
-            CSVに追加
+            TSVに追加
           </button>
         </div>
       </section>
@@ -287,20 +287,20 @@ export function MainWorkspace({ error, setError }: MainWorkspaceProps) {
       {isMainComplete && (
         <section className="status-panel">
           <strong>処理完了</strong>
-          <span>{records.length} 件を CSV に追加しました。</span>
+          <span>{records.length} 件を TSV に追加しました。</span>
         </section>
       )}
 
-      <section className="csv-panel">
+      <section className="tsv-panel">
         <div className="panel-heading">
-          <h2>CSV</h2>
+          <h2>TSV</h2>
         </div>
-        <textarea readOnly value={csv} placeholder="確認した結果がここに追加されます。" />
-        <div className="panel-actions csv-actions">
-          <button type="button" disabled={!csv} onClick={() => navigator.clipboard.writeText(csv)}>
+        <textarea readOnly value={tsv} placeholder="確認した結果がここに追加されます。" />
+        <div className="panel-actions tsv-actions">
+          <button type="button" disabled={!tsv} onClick={() => navigator.clipboard.writeText(tsv)}>
             コピー
           </button>
-          <button type="button" disabled={!csv} onClick={() => setRecords([])}>
+          <button type="button" disabled={!tsv} onClick={() => setRecords([])}>
             クリア
           </button>
         </div>

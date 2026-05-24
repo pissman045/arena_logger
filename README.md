@@ -1,6 +1,6 @@
 # Arena Logger
 
-Blue Archive の固定スクリーンショットから、戦闘ログ用 CSV をブラウザ内で生成する静的 Web アプリ。
+Blue Archive の固定スクリーンショットから、戦闘ログ用 TSV をブラウザ内で生成する静的 Web アプリ。
 
 ## Requirements
 

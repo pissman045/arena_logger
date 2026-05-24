@@ -157,7 +157,7 @@ h1 {
   padding: 12px 14px;
 }
 
-.csv-panel,
+.tsv-panel,
 .queue-panel,
 .ocr-panel {
   display: grid;
@@ -375,7 +375,7 @@ h1 {
   cursor: not-allowed;
 }
 
-.csv-actions {
+.tsv-actions {
   justify-content: flex-end;
 }
 
