@@ -6,3 +6,4 @@ coverage
 samples/
 data/
 public/tessdata/jpn.traineddata
+tmp/
