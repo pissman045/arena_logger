@@ -13,17 +13,14 @@ export type GroundTruthFile =
     };
 
 export function createCharacterNameGroundTruthFiles(
-  sourceFileName: string,
+  _sourceFileName: string,
   items: Array<Pick<CharacterNameOcrItem, "fieldName" | "characterName" | "preprocessedImage">>,
 ): GroundTruthFile[] {
-  const sourceBaseName = sanitizeFileName(sourceFileName.replace(/\.[^.]+$/, ""));
-
-  return items.flatMap((item, index) => {
+  return items.flatMap((item) => {
     const baseName = [
-      sourceBaseName,
-      String(index + 1).padStart(2, "0"),
+      sanitizeFileName(item.characterName || "unknown-character"),
       sanitizeFileName(item.fieldName),
-    ].join("-");
+    ].join("__");
 
     return [
       {

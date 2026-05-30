@@ -14,14 +14,37 @@ describe("createCharacterNameGroundTruthFiles", () => {
       ]),
     ).toEqual([
       {
-        fileName: "BlueArchive_2026-05-23_123456-01-leftChar1Name.png",
+        fileName: "シュン__leftChar1Name.png",
         kind: "image",
         dataUrl: "data:image/png;base64,abc",
       },
       {
-        fileName: "BlueArchive_2026-05-23_123456-01-leftChar1Name.gt.txt",
+        fileName: "シュン__leftChar1Name.gt.txt",
         kind: "text",
         text: "シュン\n",
+      },
+    ]);
+  });
+
+  it("uses a fallback name when the character name is empty", () => {
+    expect(
+      createCharacterNameGroundTruthFiles("ignored.png", [
+        {
+          fieldName: "rightChar6Name",
+          characterName: "",
+          preprocessedImage: "data:image/png;base64,xyz",
+        },
+      ]),
+    ).toEqual([
+      {
+        fileName: "unknown-character__rightChar6Name.png",
+        kind: "image",
+        dataUrl: "data:image/png;base64,xyz",
+      },
+      {
+        fileName: "unknown-character__rightChar6Name.gt.txt",
+        kind: "text",
+        text: "\n",
       },
     ]);
   });
