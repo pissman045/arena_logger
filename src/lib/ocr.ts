@@ -33,10 +33,14 @@ export type DamageOcrItem = {
 type BattleResult = "win" | "lose";
 
 const characterNameOcrScale = 1;
+const characterNameRecognitionScale = 2;
 const characterNameBrightThreshold = 140;
 const characterNameCropPadding = 8;
 const characterNameTwoLineMinHeight = 75;
-const characterNameLineJoinGap = 4;
+const characterNameLineJoinGap = 2;
+const characterNameFinalPadding = 8;
+const characterNameBinaryThreshold = 170;
+const characterNameBinaryContrast = 1.8;
 const characterNameWhitelist =
   "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ" +
   "マミムメモヤユヨラリルレロワヲン" +
@@ -335,12 +339,41 @@ export async function preprocessCharacterNameImage(dataUrl: string): Promise<str
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
   const bounds = findDarkPixelBounds(imageData, characterNameBrightThreshold);
   const croppedCanvas = cropCanvasToBounds(canvas, bounds, characterNameCropPadding);
-  const preprocessedCanvas =
-    croppedCanvas.height >= characterNameTwoLineMinHeight
-      ? joinTwoLineCharacterNameCanvas(croppedCanvas)
-      : croppedCanvas;
+  const isTwoLine = croppedCanvas.height >= characterNameTwoLineMinHeight;
+  const preprocessedCanvas = isTwoLine ? joinTwoLineCharacterNameCanvas(croppedCanvas) : croppedCanvas;
+  const scaledPreprocessedCanvas = scaleCanvas(
+    preprocessedCanvas,
+    characterNameRecognitionScale,
+    true,
+  );
+  const preprocessedContext = scaledPreprocessedCanvas.getContext("2d");
 
-  return preprocessedCanvas.toDataURL("image/png");
+  if (!preprocessedContext) {
+    throw new Error("Canvas 2D context is not available.");
+  }
+
+  const binaryImageData = createCharacterNameBinaryImageData(
+    preprocessedContext.getImageData(
+      0,
+      0,
+      scaledPreprocessedCanvas.width,
+      scaledPreprocessedCanvas.height,
+    ),
+  );
+
+  preprocessedContext.putImageData(binaryImageData, 0, 0);
+
+  const refinedBounds = findDarkPixelBounds(binaryImageData, characterNameBrightThreshold);
+  const refinedCanvas = cropCanvasToBounds(
+    scaledPreprocessedCanvas,
+    refinedBounds,
+    isTwoLine ? 0 : characterNameCropPadding * characterNameRecognitionScale,
+  );
+  const outputCanvas = isTwoLine
+    ? addCanvasPadding(refinedCanvas, characterNameFinalPadding * characterNameRecognitionScale)
+    : refinedCanvas;
+
+  return outputCanvas.toDataURL("image/png");
 }
 
 export async function preprocessDamageImage(dataUrl: string): Promise<string> {
@@ -394,7 +427,7 @@ function joinTwoLineCharacterNameCanvas(sourceCanvas: HTMLCanvasElement): HTMLCa
       },
       0,
     ),
-    characterNameCropPadding,
+    0,
   );
   const lowerCanvas = cropCanvasToDarkPixels(
     cropCanvasToBounds(
@@ -407,7 +440,7 @@ function joinTwoLineCharacterNameCanvas(sourceCanvas: HTMLCanvasElement): HTMLCa
       },
       0,
     ),
-    characterNameCropPadding,
+    0,
   );
 
   if (upperCanvas === null || lowerCanvas === null) {
@@ -425,11 +458,11 @@ function joinTwoLineCharacterNameCanvas(sourceCanvas: HTMLCanvasElement): HTMLCa
   canvas.height = Math.max(upperCanvas.height, lowerCanvas.height);
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(upperCanvas, 0, Math.floor((canvas.height - upperCanvas.height) / 2));
+  context.drawImage(upperCanvas, 0, canvas.height - upperCanvas.height);
   context.drawImage(
     lowerCanvas,
     upperCanvas.width + characterNameLineJoinGap,
-    Math.floor((canvas.height - lowerCanvas.height) / 2),
+    canvas.height - lowerCanvas.height,
   );
 
   return canvas;
@@ -480,6 +513,51 @@ function cropCanvasToBounds(
   canvas.width = width;
   canvas.height = height;
   context.drawImage(sourceCanvas, left, top, width, height, 0, 0, width, height);
+
+  return canvas;
+}
+
+function addCanvasPadding(sourceCanvas: HTMLCanvasElement, padding: number): HTMLCanvasElement {
+  if (padding <= 0) {
+    return sourceCanvas;
+  }
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Canvas 2D context is not available.");
+  }
+
+  canvas.width = sourceCanvas.width + padding * 2;
+  canvas.height = sourceCanvas.height + padding * 2;
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(sourceCanvas, padding, padding);
+
+  return canvas;
+}
+
+function scaleCanvas(
+  sourceCanvas: HTMLCanvasElement,
+  scale: number,
+  smoothing = false,
+): HTMLCanvasElement {
+  if (scale === 1) {
+    return sourceCanvas;
+  }
+
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Canvas 2D context is not available.");
+  }
+
+  canvas.width = Math.max(1, Math.round(sourceCanvas.width * scale));
+  canvas.height = Math.max(1, Math.round(sourceCanvas.height * scale));
+  context.imageSmoothingEnabled = smoothing;
+  context.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
 
   return canvas;
 }
@@ -591,6 +669,31 @@ function createDamageBinaryImageData(source: ImageData): ImageData {
       whiteDistance <= 1600
         ? 255
         : 0;
+
+    binary.data[index] = value;
+    binary.data[index + 1] = value;
+    binary.data[index + 2] = value;
+    binary.data[index + 3] = 255;
+  }
+
+  return binary;
+}
+
+function createCharacterNameBinaryImageData(source: ImageData): ImageData {
+  const binary = new ImageData(source.width, source.height);
+
+  for (let index = 0; index < source.data.length; index += 4) {
+    const red = source.data[index] ?? 255;
+    const green = source.data[index + 1] ?? 255;
+    const blue = source.data[index + 2] ?? 255;
+    const alpha = source.data[index + 3] ?? 255;
+    const luminance = 0.299 * red + 0.587 * green + 0.114 * blue;
+    const contrasted = clamp(
+      (luminance - 128) * characterNameBinaryContrast + 128,
+      0,
+      255,
+    );
+    const value = alpha < 32 ? 255 : contrasted >= characterNameBinaryThreshold ? 255 : 0;
 
     binary.data[index] = value;
     binary.data[index + 1] = value;
