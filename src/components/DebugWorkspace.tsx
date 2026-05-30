@@ -5,10 +5,12 @@ import { createCharacterNameGroundTruthFiles } from "../lib/groundTruth";
 import { downloadGroundTruthArchive } from "../lib/groundTruthArchive";
 import { createRegionPreviews, type RegionPreview } from "../lib/imageRegions";
 import {
+  compareCharacterNameModels,
   recognizeCharacterNames,
   recognizeDamageValues,
   recognizeResultText,
   recognizeUserNames,
+  type CharacterNameComparisonItem,
   type CharacterNameOcrItem,
   type DamageOcrItem,
   type ResultOcrOutput,
@@ -30,12 +32,16 @@ export function DebugWorkspace({ error, setError }: DebugWorkspaceProps) {
   const [roleOcr, setRoleOcr] = useState<RoleIconOutput | null>(null);
   const [userNameOcr, setUserNameOcr] = useState<UserNameOcrOutput | null>(null);
   const [characterNameOcr, setCharacterNameOcr] = useState<CharacterNameOcrItem[]>([]);
+  const [characterNameComparison, setCharacterNameComparison] = useState<
+    CharacterNameComparisonItem[]
+  >([]);
   const [damageOcr, setDamageOcr] = useState<DamageOcrItem[]>([]);
   const [groundTruthLabels, setGroundTruthLabels] = useState<Record<string, string>>({});
   const [isRecognizingRole, setIsRecognizingRole] = useState(false);
   const [isRecognizingResult, setIsRecognizingResult] = useState(false);
   const [isRecognizingUserName, setIsRecognizingUserName] = useState(false);
   const [isRecognizingCharacterName, setIsRecognizingCharacterName] = useState(false);
+  const [isComparingCharacterName, setIsComparingCharacterName] = useState(false);
   const [isRecognizingDamage, setIsRecognizingDamage] = useState(false);
 
   async function handleSelectedFiles(nextFiles: File[]): Promise<void> {
@@ -48,6 +54,7 @@ export function DebugWorkspace({ error, setError }: DebugWorkspaceProps) {
       setResultOcr(null);
       setUserNameOcr(null);
       setCharacterNameOcr([]);
+      setCharacterNameComparison([]);
       setDamageOcr([]);
       setGroundTruthLabels({});
 
@@ -62,6 +69,7 @@ export function DebugWorkspace({ error, setError }: DebugWorkspaceProps) {
       setResultOcr(null);
       setUserNameOcr(null);
       setCharacterNameOcr([]);
+      setCharacterNameComparison([]);
       setDamageOcr([]);
       setGroundTruthLabels({});
       setError(caught instanceof Error ? caught.message : "Invalid file.");
@@ -281,6 +289,39 @@ export function DebugWorkspace({ error, setError }: DebugWorkspaceProps) {
               >
                 {isRecognizingCharacterName ? "実行中" : "キャラ名 OCR"}
               </button>
+              <button
+                type="button"
+                disabled={isComparingCharacterName}
+                onClick={async () => {
+                  const characterNameImages = previews
+                    .filter((preview) => /^(left|right)Char[1-6]Name$/.test(preview.name))
+                    .map((preview) => ({
+                      fieldName: preview.name,
+                      image: preview.dataUrl,
+                    }));
+                  const sourceFileName = debugFiles[0]?.name ?? "unknown";
+
+                  if (characterNameImages.length !== 12) {
+                    setError(`${sourceFileName}: キャラ名領域が 12 個そろっていません。`);
+                    return;
+                  }
+
+                  try {
+                    setError(null);
+                    setIsComparingCharacterName(true);
+                    setCharacterNameComparison(await compareCharacterNameModels(characterNameImages));
+                  } catch (caught) {
+                    setCharacterNameComparison([]);
+                    const message = caught instanceof Error ? caught.message : "OCR failed.";
+
+                    setError(`${sourceFileName}: キャラ名比較に失敗しました。 ${message}`);
+                  } finally {
+                    setIsComparingCharacterName(false);
+                  }
+                }}
+              >
+                {isComparingCharacterName ? "実行中" : "キャラ名 比較"}
+              </button>
             </div>
           </div>
           {roleOcr && (
@@ -399,6 +440,22 @@ export function DebugWorkspace({ error, setError }: DebugWorkspaceProps) {
                   </div>
                   <strong>{item.damage?.toLocaleString() ?? "unknown"}</strong>
                   <code>{item.text || "(empty)"}</code>
+                </div>
+              ))}
+            </div>
+          )}
+          {characterNameComparison.length > 0 && (
+            <div className="ocr-result-grid character-result-grid">
+              {characterNameComparison.map((item) => (
+                <div className="ocr-result-item" key={item.fieldName}>
+                  <span>{item.fieldName}</span>
+                  <div className="ocr-preprocessed-frame">
+                    <img alt="" src={item.preprocessedImage} />
+                  </div>
+                  <strong>jpn: {item.jpnCharacterName || "unknown"}</strong>
+                  <code>{item.jpnText || "(empty)"}</code>
+                  <strong>bluearchive_jpn: {item.trainedCharacterName || "unknown"}</strong>
+                  <code>{item.trainedText || "(empty)"}</code>
                 </div>
               ))}
             </div>

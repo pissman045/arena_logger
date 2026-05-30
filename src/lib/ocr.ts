@@ -23,6 +23,15 @@ export type CharacterNameOcrItem = {
   preprocessedImage: string;
 };
 
+export type CharacterNameComparisonItem = {
+  fieldName: string;
+  preprocessedImage: string;
+  jpnText: string;
+  jpnCharacterName: string;
+  trainedText: string;
+  trainedCharacterName: string;
+};
+
 export type DamageOcrItem = {
   fieldName: string;
   text: string;
@@ -169,11 +178,52 @@ export function normalizeUserName(text: string): string {
 export async function recognizeCharacterNames(
   characterNameImages: Array<{ fieldName: string; image: string }>,
 ): Promise<CharacterNameOcrItem[]> {
-  const worker = await createWorker(
-    [characterNameWorkerLanguage],
-    OEM.LSTM_ONLY,
-    localTessdataWorkerOptions,
+  return recognizeCharacterNamesWithLanguage(characterNameImages, [characterNameWorkerLanguage]);
+}
+
+export async function compareCharacterNameModels(
+  characterNameImages: Array<{ fieldName: string; image: string }>,
+): Promise<CharacterNameComparisonItem[]> {
+  const preprocessedItems = await Promise.all(
+    characterNameImages.map(async ({ fieldName, image }) => ({
+      fieldName,
+      preprocessedImage: await preprocessCharacterNameImage(image),
+    })),
   );
+  const [jpnItems, trainedItems] = await Promise.all([
+    recognizePreprocessedCharacterNames(preprocessedItems, ["jpn"]),
+    recognizePreprocessedCharacterNames(preprocessedItems, [characterNameWorkerLanguage]),
+  ]);
+
+  return preprocessedItems.map((item, index) => ({
+    fieldName: item.fieldName,
+    preprocessedImage: item.preprocessedImage,
+    jpnText: jpnItems[index]?.text ?? "",
+    jpnCharacterName: jpnItems[index]?.characterName ?? "",
+    trainedText: trainedItems[index]?.text ?? "",
+    trainedCharacterName: trainedItems[index]?.characterName ?? "",
+  }));
+}
+
+async function recognizeCharacterNamesWithLanguage(
+  characterNameImages: Array<{ fieldName: string; image: string }>,
+  languages: string[],
+): Promise<CharacterNameOcrItem[]> {
+  const preprocessedItems = await Promise.all(
+    characterNameImages.map(async ({ fieldName, image }) => ({
+      fieldName,
+      preprocessedImage: await preprocessCharacterNameImage(image),
+    })),
+  );
+
+  return recognizePreprocessedCharacterNames(preprocessedItems, languages);
+}
+
+async function recognizePreprocessedCharacterNames(
+  items: Array<{ fieldName: string; preprocessedImage: string }>,
+  languages: string[],
+): Promise<CharacterNameOcrItem[]> {
+  const worker = await createWorker(languages, OEM.LSTM_ONLY, localTessdataWorkerOptions);
 
   try {
     await worker.setParameters({
@@ -183,15 +233,14 @@ export async function recognizeCharacterNames(
       preserve_interword_spaces: "1",
     });
 
-    const items: CharacterNameOcrItem[] = [];
+    const recognizedItems: CharacterNameOcrItem[] = [];
 
-    for (const { fieldName, image } of characterNameImages) {
-      const preprocessedImage = await preprocessCharacterNameImage(image);
+    for (const { fieldName, preprocessedImage } of items) {
       const text = await recognizeText(worker, preprocessedImage);
       const rawCharacterName = normalizeCharacterName(text);
       const characterName = correctCharacterName(rawCharacterName);
 
-      items.push({
+      recognizedItems.push({
         fieldName,
         text,
         characterName,
@@ -199,7 +248,7 @@ export async function recognizeCharacterNames(
       });
     }
 
-    return items;
+    return recognizedItems;
   } finally {
     await worker.terminate();
   }
